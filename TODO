@@ -1,0 +1,5 @@
+- installation makefile
+- complete cookies, delete-all-cookies is implemented, but not tested.
+- more element-by-... procedures
+- low hanging fruit. Add all the methods that are easy to do, even without tests.
+- Support for firefox, generic server from uri.
