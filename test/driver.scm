@@ -12,6 +12,19 @@
     (lambda (response body)
       (assert (equal? 200 (response-code response)))
       (assert (equal? "test" body)))))
+
+(test call-with-web-driver
+  (define closed #f)
+  (assert
+    (equal? 42
+      (call-with-web-driver
+        (lambda (driver)
+          (assert (web-driver? driver))
+          (assert (web-driver-open? driver))
+          (assert (equal? driver (open-default-driver)))
+          (set! closed driver)
+          42))))
+  (assert (not (web-driver-open? closed))))
   
 ; Use only one driver, default, to speed up the tests
 (hook (close-web-driver))

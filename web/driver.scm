@@ -88,6 +88,10 @@
     (('web-driver driver-pipe driver-uri session-id) #t)
     (else #f)))
 
+(define-public (web-driver-open? driver)
+  (match driver
+    (('web-driver driver-pipe driver-uri session-id) (not (port-closed? driver-pipe)))))
+
 (define (session-command driver method path body-scm)
   (match driver
     (('web-driver driver-pipe driver-uri session-id)
@@ -109,7 +113,16 @@
         (fluid-set! *default-driver* #f)))
     (close (car args))))
 
-(define (open-default-driver)
+(define-public (call-with-web-driver proc)
+  (define driver (open-web-driver))
+  (catch #t
+    (lambda () 
+      (let ((r (with-fluid* *default-driver* driver (lambda () (proc driver)))))
+        (close-web-driver driver) r))
+    (lambda args 
+      (close-web-driver driver) (apply throw args))))
+
+(define-public (open-default-driver)
   (if (not (fluid-ref *default-driver*))
     (fluid-set! *default-driver* (open-web-driver)))
   (fluid-ref *default-driver*))

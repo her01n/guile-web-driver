@@ -38,6 +38,11 @@ only to call *close-web-driver* without argument when done.
   If the argument is not specified, closes the implicitly open web driver session.
   Does nothing if the argument is not specified and the session was not yet imlicitly started.
 
+- **call-with-web-driver proc**
+  Start a web driver session, and call *proc* with the resulting session object.
+  This new session would be used as default for procedures taking optional session argument.
+  Closes the session after the proc returns or throws an exception.
+
 ### Navigation
 
 - **navigate-to [driver] url**
