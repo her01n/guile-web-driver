@@ -32,11 +32,31 @@
 (define (const-html html)
   (lambda (request body) (values '((content-type . (text/html))) html)))
 
-(test web-driver
-  (test current-url
+(test navigation
+  (test navigate-to
     ; To get current url we do not really need to run a web server
     (navigate-to "http://localhost:8080")
     (assert (equal? "http://localhost:8080/" (current-url))))
+  (test back-forward 
+    (set-web-handler! (const-html "<html><body></body></html>"))
+    (navigate-to "http://localhost:8080/a")
+    (navigate-to "http://localhost:8080/b")
+    (back)
+    (assert (equal? "http://localhost:8080/a" (current-url)))
+    (forward)
+    (assert (equal? "http://localhost:8080/b" (current-url))))
+  (test refresh
+    (set-web-handler! (const-html "<html><body></body></html>"))
+    (navigate-to "http://localhost:8080")
+    (set-web-handler! (const-html "<html><body><div id='theid' /></body></html>"))
+    (refresh)
+    (assert (element-by-id "theid")))
+  (test title
+    (set-web-handler! (const-html "<html><head><title>the title</title></head><body></body></html>"))
+    (navigate-to "http://localhost:8080/")
+    (assert (equal? "the title" (title)))))
+
+(test elements
   (test element-by-id
     (set-web-handler! (const-html "<html><body><div id='theid'>content</div></body></html>"))
     (navigate-to "http://localhost:8080")
@@ -88,6 +108,14 @@
     (send-keys (element-by-id "text") "keys")
     (click (element-by-id "submit"))
     (assert (equal? "http://localhost:8080/submit?text=keys" (current-url)))))
+
+#!
+(test seo
+  (navigate-to "http://duckduckgo.com")
+  (send-keys (element-by-id "search_form_input_homepage") "guile webdriver selenium")
+  (click (element-by-id "search_button_homepage"))
+  (assert (element-by-css-selector "a[href='https://github.com/her01n/guile-web-driver']")))
+!#
     
 ; TODO test cookies
 

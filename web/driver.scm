@@ -138,15 +138,22 @@
     (lambda (driver url)
       (session-command driver 'POST "/url" (json (object ("url" ,url)))))))
 
-(define-public current-url
+(define (default-session-command method path body-scm)
   (with-default-driver
     (lambda (driver)
-      (session-command driver 'GET "/url" #f))))
+      (session-command driver method path body-scm))))
 
-(define-public delete-all-cookies
-  (with-default-driver
-    (lambda (driver)
-      (session-command driver 'DELETE "/cookie" #f))))
+(define-public current-url (default-session-command 'GET "/url" #f))
+
+(define-public back (default-session-command 'POST "/back" (json (object))))
+
+(define-public forward (default-session-command 'POST "/forward" (json (object))))
+
+(define-public refresh (default-session-command 'POST "/refresh" (json (object))))
+
+(define-public title (default-session-command 'GET "/title" #f))
+
+(define-public delete-all-cookies (default-session-command 'DELETE "/cookie" #f))
 
 ; XXX elements are returned as a json object with a single weird key
 ; with value of the actual element id/reference

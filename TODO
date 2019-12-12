@@ -1,5 +1,8 @@
-- installation makefile
+- find-element-by-anything,
+- find-element-by-... #:from
+- find-elements
+- element clear
+- direct webdriver connection (host, port)
+- announce on guile-user mailing list
 - complete cookies, delete-all-cookies is implemented, but not tested.
-- more element-by-... procedures
-- low hanging fruit. Add all the methods that are easy to do, even without tests.
-- Support for firefox, generic server from uri.
+- Support for firefox
