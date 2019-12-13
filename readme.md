@@ -53,6 +53,19 @@ only to call *close-web-driver* without argument when done.
 - **current-url [driver]**
   Returns the current url, as shown in the address bar.
 
+- **back [driver]**
+  Navigates to previous page. Does nothing if the browser is already at the start of history list.
+
+- **forward [driver]**
+  Navigates to next page in history list. Does nothing if the browser is at the most recent page.
+
+- **refresh [driver]**
+  Reloads current page.
+
+- **title [driver]**
+  Returns the title of the current page as string.
+  Returns empty string if the page did not set a title.
+
 ### Cookies
 
 - **delete-all-cookies [driver]**
@@ -61,17 +74,17 @@ only to call *close-web-driver* without argument when done.
 ### Finding Elements
 
 - **element-by-css-selector [driver] selector**
-  Finds the first DOM element that matches css selector.
+  Finds the first element that matches css selector.
   If there is no such element, throws an exception.
 
 - **elements-by-css-selector [driver] selector**
-  Finds all the DOM elements that matches css selector.
+  Finds all the elements that matches css selector.
   Returns empty list in case there is no such element.
 
 - **element-by-id [driver] id**
-  Finds the first DOM element with the given id.
+  Finds the first element with the given id.
 
-- **element-by-id [driver] id**
+- **elements-by-id [driver] id**
   Finds all the element with the id.
 
 - **element-by-class-name [driver] class-name**
