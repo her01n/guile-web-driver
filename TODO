@@ -1,5 +1,3 @@
-- find-element-by-... #:from
-- element clear
 - direct webdriver connection (host, port)
 - announce on guile-user mailing list
 - complete cookies, delete-all-cookies is implemented, but not tested.

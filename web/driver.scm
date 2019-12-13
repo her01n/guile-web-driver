@@ -237,16 +237,36 @@
 (define-public-with-driver (active-element driver)
   (web-driver-element driver (session-command driver 'GET "/element/active" #f)))
 
-;;; Interacting with elements
+;;; Element State
 
-(define-public (text element)
-  (element-command element 'GET "/text" #f))
+(define-public (selected? element)
+  (element-command element 'GET "/selected" #f))
 
 (define-public (attribute element name)
   (element-command element 'GET (format #f "/attribute/~a" name) #f))
 
+(define-public (property element name)
+  (element-command element 'GET (format #f "/property/~a" name) #f))
+
+(define-public (css-value element name)
+  (element-command element 'GET (format #f "/css/~a" name) #f))
+
+(define-public (text element)
+  (element-command element 'GET "/text" #f))
+
+(define-public (tag-name element)
+  (element-command element 'GET "/name" #f))
+
+(define-public (enabled? element)
+  (element-command element 'GET "/enabled" #f))
+
+;;; Interacting with elements
+
 (define-public (click element)
   (element-command element 'POST "/click" (json (object))))
+
+(define-public (clear element)
+  (element-command element 'POST "/clear" (json (object))))
 
 (define-public (send-keys element text)
   (element-command element 'POST "/value" (json (object ("text" ,text)))))

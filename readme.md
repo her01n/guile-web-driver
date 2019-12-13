@@ -46,6 +46,7 @@ only to call *close-web-driver* without argument when done.
   Start a web driver session, and call *proc* with the resulting session object.
   This new session would be used as default for procedures taking optional session argument.
   Closes the session after the proc returns or throws an exception.
+  Returns the value that the *proc* returned.
 
 ### Navigation
 
@@ -128,13 +129,13 @@ only to call *close-web-driver* without argument when done.
 
 - **elements-by-link-text [driver] link-text [#:from element]**
 
-  Finds all *a* elements that have the rendered text equal to *link-text*.
+  Finds all *<a>* elements that have the rendered text equal to *link-text*.
   Returns empty list in case there is no such element.
   If from element is specified, consider only elements below this element.
 
 - **element-by-partial-link-text [driver] link-text [#:from element]**
 
-  Finds an *a* element where *link-text* is a substring of rendered text.
+  Finds an *<a>* element where *link-text* is a substring of rendered text.
   If there is no such element, throws an exception.
   If from element is specified, consider only elements below this element.
 
@@ -175,20 +176,49 @@ only to call *close-web-driver* without argument when done.
 
 ### Element State
 
-- **text element**
+- **selected? element**
 
-  Gets the text content of the element.
+  Returns *#t* if the check box or radio box is checked,
+  or if *<select>* element is selected.
+  Throws an exception if the element is not selectable.
 
 - **attribute element name**
 
   Gets the value of the element's attribute.
-  TODO what if there is no such attribute
+  Returns *#f* if the attribute is undefined.
+
+- **property element name**
+
+  Gets the value of element's javascript property.
+  Returns *#f* if the property is undefined.
+
+- **css-value element name**
+
+  Returns the computed value from element's style declarations.
+
+- **text element**
+
+  Gets the text content of the element.
+
+- **tag name element**
+
+  Returns the tag name of the element.
+
+- **enabled? element**
+
+  Checks if the form control is enabled.
 
 ### Element Interaction
 
 - **click element**
 
-  Simulates user clicking the element.
+  Simulates user clicking the element,
+  For example *<a>* element or form control.
+
+- **clear element**
+
+  Clears all content of content editable element.
+  Resets the state of File Upload form control.
 
 - **send-keys element text**
 

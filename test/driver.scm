@@ -105,15 +105,50 @@
     (navigate-to "http://localhost:8080")
     (assert (element-by-tag-name "p" #:from (element-by-class-name "full")))
     (assert 
-      (throws-exception (element-by-tag-name "p" #:from (element-by-class-name "empty")))))
+      (throws-exception (element-by-tag-name "p" #:from (element-by-class-name "empty"))))))
+
+(test element-state
+  (test selected?
+    (set-web-handler! 
+      (const-html 
+        "<form>
+          <input type='checkbox' name='checked' checked='true'/>
+          <input type='checkbox' name='unchecked'/>
+        </form>"))
+    (navigate-to "http://localhost:8080")
+    (assert (selected? (element-by-css-selector "input[name='checked']")))
+    (assert (not (selected? (element-by-css-selector "input[name='unchecked'")))))
+  (test property
+    (set-web-handler!
+      (const-html "<html><body>content</body></html>"))
+    (navigate-to "http://localhost:8080")
+    (assert (equal? "BODY" (property (element-by-tag-name "body") "tagName"))))
+  (test attribute
+    (set-web-handler! (const-html "<div key='value'></div>"))
+    (navigate-to "http://localhost:8080")
+    (assert (equal? "value" (attribute (element-by-tag-name "div") "key")))
+    (assert (not (attribute (element-by-tag-name "div") "xxx"))))
+  (test css-value
+    (set-web-handler! (const-html "<div style='font-size:11'>content</div>"))
+    (navigate-to "http://localhost:8080")
+    (assert (equal? "11px" (css-value (element-by-tag-name "div") "font-size"))))
   (test text
     (set-web-handler! (const-html "<html><body>outer <div id='theid'>text</div></body></html>"))
     (navigate-to "http://localhost:8080")
     (assert (equal? "text" (text (element-by-id "theid")))))
-  (test attribute
-    (set-web-handler! (const-html "<html><body><div id='theid' class='cool'>text</div></body></html>"))
+  (test tag
+    (set-web-handler! (const-html "<div>content</div>"))
     (navigate-to "http://localhost:8080")
-    (assert (equal? "cool" (attribute (element-by-id "theid") "class"))))
+    (assert (equal? "div" (tag-name (element-by-tag-name "div")))))
+  (test enabled?
+    (set-web-handler!
+      (const-html 
+        "<form><input name=enabled /><input name=disabled disabled=true /></form>"))
+    (navigate-to "http://localhost:8080")
+    (assert (enabled? (element-by-css-selector "input[name='enabled']")))
+    (assert (not (enabled? (element-by-css-selector "input[name='disabled']"))))))
+
+(test element-interaction
   (test click
     (set-web-handler!
       (lambda (request body)
@@ -126,6 +161,11 @@
     (navigate-to "http://localhost:8080")
     (click (element-by-id "one"))
     (assert (equal? "http://localhost:8080/one" (current-url))))
+  (test clear
+    (set-web-handler! (const-html "<form><input name=in value=filled /></form>"))
+    (navigate-to "http://localhost:8080")
+    (clear (element-by-tag-name "input"))
+    (assert (equal? "" (property (element-by-tag-name "input") "value"))))
   (test send-keys
     (set-web-handler!
       (const-html
