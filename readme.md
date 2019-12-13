@@ -83,21 +83,51 @@ only to call *close-web-driver* without argument when done.
 
 - **element-by-id [driver] id**
   Finds the first element with the given id.
+  If there is no such element, throws an exception.
 
 - **elements-by-id [driver] id**
-  Finds all the element with the id.
+  Finds all the element with the given id.
+  Returns empty list in case there is no such element.
 
 - **element-by-class-name [driver] class-name**
   Finds the first element of the class.
+  If there is no such element, throws an exception.
 
 - **elements-by-class-name [driver] class-name**
   Finds all the element of the class.
+  Returns empty list in case there is no such element.
+
+- **element-by-link-text [driver] link-text**
+  Finds an *a* element that have the rendered text equal to *link-text*.
+  If there is no such element, throws an exception.
+
+- **elements-by-link-text [driver] link-text**
+  Finds all *a* elements that have the rendered text equal to *link-text*.
+  Returns empty list in case there is no such element.
+
+- **element-by-partial-link-text [driver] link-text**
+  Finds an *a* element where *link-text* is a substring of rendered text.
+  If there is no such element, throws an exception.
+
+- **elements-by-partial-link-text [driver] link-text**
+  Finds all *a* elements where *link-text* is a substring of rendered text.
+  Returns empty list in case there is no such element.
 
 - **element-by-tag-name [driver] tag**
   Finds the first element with the tag.
+  If there is no such element, throws an exception.
 
 - **elements-by-tag-name [driver] tag**
   Finds all the elements with the tag.
+  Returns empty list in case there is no such element.
+
+- **element-by-xpath [driver] xpath**
+  Finds the element matching the XPath.
+  If there is no such element, throws an exception.
+
+- **element-by-xpath [driver] xpath**
+  Finds all the the elements matching the XPath.
+  Returns empty list in case there is no such element.
 
 ### Element Interaction
 

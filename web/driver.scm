@@ -167,18 +167,24 @@
 (define (web-driver-element driver element-object)
   (list 'web-driver-element driver (hash-ref element-object "element-6066-11e4-a52e-4f735466cecf")))
 
-(define-public-with-driver (element-by-css-selector driver selector)
+(define (find-element driver using value)
   (web-driver-element driver
     (session-command driver 
       'POST "/element" 
-      (json (object ("using" "css selector") ("value" ,selector))))))
+      (json (object ("using" ,using) ("value" ,value))))))
 
-(define-public-with-driver (elements-by-css-selector driver selector)
+(define (find-elements driver using value)
   (map
     (lambda (element-object) (web-driver-element driver element-object))
     (session-command driver 
       'POST "/elements" 
-      (json (object ("using" "css selector") ("value" ,selector))))))
+      (json (object ("using" ,using) ("value" ,value))))))
+
+(define-public-with-driver (element-by-css-selector driver selector)
+  (find-element driver "css selector" selector))
+
+(define-public-with-driver (elements-by-css-selector driver selector)
+  (find-elements driver "css selector" selector))
 
 ; TODO check that the id and class name are valid
 ; They should be at least one character and not contain any space characters
@@ -195,9 +201,31 @@
 (define-public-with-driver (elements-by-class-name driver class-name)
   (elements-by-css-selector driver (string-append "." class-name)))
 
-(define-public element-by-tag-name element-by-css-selector)
+(define-public-with-driver (element-by-tag-name driver tag-name)
+  (find-element driver "tag name" tag-name))
 
-(define-public elements-by-tag-name elements-by-css-selector)
+(define-public-with-driver (elements-by-tag-name driver tag-name)
+  (find-elements driver "tag name" tag-name))
+
+(define-public-with-driver (element-by-link-text driver link-text)
+  (find-element driver "link text" link-text))
+
+(define-public-with-driver (elements-by-link-text driver link-text)
+  (find-elements driver "link text" link-text))
+
+(define-public-with-driver (element-by-partial-link-text driver link-text)
+  (find-element driver "partial link text" link-text))
+
+(define-public-with-driver (elements-by-partial-link-text driver link-text)
+  (find-elements driver "partial link text" link-text))
+
+(define-public-with-driver (element-by-xpath driver xpath)
+  (find-element driver "xpath" xpath))
+
+(define-public-with-driver (elements-by-xpath driver xpath)
+  (find-elements driver "xpath" xpath))
+
+;;; Interacting with elements
 
 (define (element-command element method path body-scm)
   (match element

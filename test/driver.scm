@@ -57,6 +57,11 @@
     (assert (equal? "the title" (title)))))
 
 (test elements
+  (test element-by-css-selector
+    (set-web-handler! (const-html "<html><body><div type='text'>content</div></body></html>"))
+    (navigate-to "http://localhost:8080")
+    (assert (element-by-css-selector "div[type='text']"))
+    (assert (throws-exception (element-by-css-selector "div[type='image']"))))
   (test element-by-id
     (set-web-handler! (const-html "<html><body><div id='theid'>content</div></body></html>"))
     (navigate-to "http://localhost:8080")
@@ -67,6 +72,23 @@
     (navigate-to "http://localhost:8080")
     (assert (element-by-class-name "clazz"))
     (assert (throws-exception (element-by-class-name "missing"))))
+  (test element-by-link-text
+    (set-web-handler! (const-html "<html><body><a href='/'>link text</a></body></html>"))
+    (navigate-to "http://localhost:8080")
+    (assert (element-by-link-text "link text"))
+    (assert (throws-exception (element-by-link-text "text")))
+    (assert (element-by-partial-link-text "link"))
+    (assert (throws-exception (element-by-partial-link-text "xxx"))))
+  (test element-by-tag-name
+    (set-web-handler! (const-html "<html><body><a href='/'>link text</a></body></html>"))
+    (navigate-to "http://localhost:8080")
+    (assert (element-by-tag-name "a"))
+    (assert (throws-exception (element-by-tag-name "b"))))
+  (test element-by-xpath
+    (set-web-handler! (const-html "<html><body><div>content</div></body></html>"))
+    (navigate-to "http://localhost:8080")
+    (assert (element-by-xpath "//body/div"))
+    (assert (throws-exception (element-by-xpath "//div/div"))))
   (test elements-by-class-name
     (set-web-handler! 
       (const-html 
