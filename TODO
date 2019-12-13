@@ -1,6 +1,4 @@
-- find-element-by-anything,
 - find-element-by-... #:from
-- find-elements
 - element clear
 - direct webdriver connection (host, port)
 - announce on guile-user mailing list

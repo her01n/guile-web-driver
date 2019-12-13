@@ -56,7 +56,7 @@
     (navigate-to "http://localhost:8080/")
     (assert (equal? "the title" (title)))))
 
-(test elements
+(test finding-elements
   (test element-by-css-selector
     (set-web-handler! (const-html "<html><body><div type='text'>content</div></body></html>"))
     (navigate-to "http://localhost:8080")
@@ -99,6 +99,13 @@
       (assert (equal? 2 (length divs)))
       (assert (equal? "one" (text (car divs))))
       (assert (equal? "two" (text (cadr divs))))))
+  (test element-from 
+    (set-web-handler!
+      (const-html "<div class='empty'></div><div class='full'><p>in<p></div>"))
+    (navigate-to "http://localhost:8080")
+    (assert (element-by-tag-name "p" #:from (element-by-class-name "full")))
+    (assert 
+      (throws-exception (element-by-tag-name "p" #:from (element-by-class-name "empty")))))
   (test text
     (set-web-handler! (const-html "<html><body>outer <div id='theid'>text</div></body></html>"))
     (navigate-to "http://localhost:8080")

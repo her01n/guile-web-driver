@@ -132,10 +132,10 @@
   (syntax-rules ()
     ((define-public-with-driver (proc-name driver args* ...) body* ...)
      (define-public (proc-name . args)
-       (define (proc driver args* ...) body* ...)
-       (if (and (pair? args) (web-driver? (car args)))
-         (apply proc args)
-         (apply proc (get-default-driver) args))))))
+       (let ((proc (lambda* (driver args* ...) body* ...)))
+             (if (and (pair? args) (web-driver? (car args)))
+               (apply proc args)
+               (apply proc (get-default-driver) args)))))))
 
 ;;; Navigation
 
@@ -160,17 +160,30 @@
 (define-public-with-driver (delete-all-cookies driver)
   (session-command driver 'DELETE "/cookie" #f))
 
-;;; Finding Elements
+;;; Elements
 
 ; XXX elements are returned as a json object with a single weird key
 ; with value of the actual element id/reference
 (define (web-driver-element driver element-object)
   (list 'web-driver-element driver (hash-ref element-object "element-6066-11e4-a52e-4f735466cecf")))
 
+(define (element-command element method path body-scm)
+  (match element
+    (('web-driver-element driver element)
+      (session-command driver method (format #f "/element/~a~a" element path) body-scm))))
+
+;;; Finding Elements
+
 (define (find-element driver using value)
   (web-driver-element driver
     (session-command driver 
       'POST "/element" 
+      (json (object ("using" ,using) ("value" ,value))))))
+
+(define (find-element-from driver from using value)
+  (web-driver-element driver
+    (element-command from
+      'POST "/element"
       (json (object ("using" ,using) ("value" ,value))))))
 
 (define (find-elements driver using value)
@@ -180,57 +193,51 @@
       'POST "/elements" 
       (json (object ("using" ,using) ("value" ,value))))))
 
-(define-public-with-driver (element-by-css-selector driver selector)
-  (find-element driver "css selector" selector))
+(define (find-elements-from driver from using value)
+  (map
+    (lambda (element-object) (web-driver-element driver element-object))
+    (element-command from 
+      'POST "/elements" 
+      (json (object ("using" ,using) ("value" ,value))))))
 
-(define-public-with-driver (elements-by-css-selector driver selector)
-  (find-elements driver "css selector" selector))
+(define-syntax define-finder
+  (syntax-rules ()
+    ((define-finder element-by elements-by using filter)
+     (begin
+       (define-public-with-driver (element-by driver value #:key (from #f))
+         (if from
+           (find-element-from driver from using (filter value))
+           (find-element driver using (filter value))))
+       (define-public-with-driver (elements-by driver value #:key (from #f))
+         (if from
+           (find-elements-from driver from using (filter value))
+           (find-elements driver using (filter value))))))
+    ((define-finder element-by elements-by using)
+     (define-finder element-by elements-by using identity))))
+
+(define-finder element-by-css-selector elements-by-css-selector "css selector")
 
 ; TODO check that the id and class name are valid
 ; They should be at least one character and not contain any space characters
 
-(define-public-with-driver (element-by-id driver id)
-  (element-by-css-selector driver (string-append "#" id)))
-
-(define-public-with-driver (elements-by-id driver id)
-  (elements-by-css-selector driver (string-append "#" id)))
+(define-finder element-by-id elements-by-id 
+  "css selector" (lambda (id) (string-append "#" id)))
   
-(define-public-with-driver (element-by-class-name driver class-name)
-  (element-by-css-selector driver (string-append "." class-name)))
+(define-finder element-by-class-name elements-by-class-name 
+  "css selector" (lambda (class-name) (string-append "." class-name)))
 
-(define-public-with-driver (elements-by-class-name driver class-name)
-  (elements-by-css-selector driver (string-append "." class-name)))
+(define-finder element-by-tag-name elements-by-tag-name "tag name")
 
-(define-public-with-driver (element-by-tag-name driver tag-name)
-  (find-element driver "tag name" tag-name))
+(define-finder element-by-link-text elements-by-link-text "link text")
 
-(define-public-with-driver (elements-by-tag-name driver tag-name)
-  (find-elements driver "tag name" tag-name))
+(define-finder element-by-partial-link-text elements-by-partial-link-text "partial link text")
 
-(define-public-with-driver (element-by-link-text driver link-text)
-  (find-element driver "link text" link-text))
+(define-finder element-by-xpath elements-by-xpath "xpath")
 
-(define-public-with-driver (elements-by-link-text driver link-text)
-  (find-elements driver "link text" link-text))
-
-(define-public-with-driver (element-by-partial-link-text driver link-text)
-  (find-element driver "partial link text" link-text))
-
-(define-public-with-driver (elements-by-partial-link-text driver link-text)
-  (find-elements driver "partial link text" link-text))
-
-(define-public-with-driver (element-by-xpath driver xpath)
-  (find-element driver "xpath" xpath))
-
-(define-public-with-driver (elements-by-xpath driver xpath)
-  (find-elements driver "xpath" xpath))
+(define-public-with-driver (active-element driver)
+  (web-driver-element driver (session-command driver 'GET "/element/active" #f)))
 
 ;;; Interacting with elements
-
-(define (element-command element method path body-scm)
-  (match element
-    (('web-driver-element driver element)
-      (session-command driver method (format #f "/element/~a~a" element path) body-scm))))
 
 (define-public (text element)
   (element-command element 'GET "/text" #f))
