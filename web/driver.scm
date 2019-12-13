@@ -122,80 +122,78 @@
     (lambda args 
       (close-web-driver driver) (apply throw args))))
 
-(define-public (open-default-driver)
-  (if (not (fluid-ref *default-driver*))
-    (fluid-set! *default-driver* (open-web-driver)))
+(define-public (get-default-driver)
+  (let ((current (fluid-ref *default-driver*)))
+    (if (or (not current) (not (web-driver-open? current)))
+      (fluid-set! *default-driver* (open-web-driver))))
   (fluid-ref *default-driver*))
 
-(define (with-default-driver proc)
-  (lambda args
-    (if (and (pair? args) (web-driver? (car args)))
-      (apply proc args)
-      (apply proc (open-default-driver) args))))
+(define-syntax define-public-with-driver
+  (syntax-rules ()
+    ((define-public-with-driver (proc-name driver args* ...) body* ...)
+     (define-public (proc-name . args)
+       (define (proc driver args* ...) body* ...)
+       (if (and (pair? args) (web-driver? (car args)))
+         (apply proc args)
+         (apply proc (get-default-driver) args))))))
 
-(define-public navigate-to
-  (with-default-driver
-    (lambda (driver url)
-      (session-command driver 'POST "/url" (json (object ("url" ,url)))))))
+;;; Navigation
 
-(define (default-session-command method path body-scm)
-  (with-default-driver
-    (lambda (driver)
-      (session-command driver method path body-scm))))
+(define-public-with-driver (navigate-to driver url)
+  (session-command driver 'POST "/url" (json (object ("url" ,url)))))
 
-(define-public current-url (default-session-command 'GET "/url" #f))
+(define-public-with-driver (current-url driver) 
+  (session-command driver 'GET "/url" #f))
 
-(define-public back (default-session-command 'POST "/back" (json (object))))
+(define-public-with-driver (back driver) 
+  (session-command driver 'POST "/back" (json (object))))
 
-(define-public forward (default-session-command 'POST "/forward" (json (object))))
+(define-public-with-driver (forward driver)
+  (session-command driver 'POST "/forward" (json (object))))
 
-(define-public refresh (default-session-command 'POST "/refresh" (json (object))))
+(define-public-with-driver (refresh driver)
+  (session-command driver 'POST "/refresh" (json (object))))
 
-(define-public title (default-session-command 'GET "/title" #f))
+(define-public-with-driver (title driver)
+  (session-command driver 'GET "/title" #f))
 
-(define-public delete-all-cookies (default-session-command 'DELETE "/cookie" #f))
+(define-public-with-driver (delete-all-cookies driver)
+  (session-command driver 'DELETE "/cookie" #f))
+
+;;; Finding Elements
 
 ; XXX elements are returned as a json object with a single weird key
 ; with value of the actual element id/reference
 (define (web-driver-element driver element-object)
   (list 'web-driver-element driver (hash-ref element-object "element-6066-11e4-a52e-4f735466cecf")))
 
-(define-public element-by-css-selector
-  (with-default-driver
-    (lambda (driver selector)
-      (web-driver-element driver
-        (session-command driver 
-        'POST "/element" 
-        (json (object ("using" "css selector") ("value" ,selector))))))))
+(define-public-with-driver (element-by-css-selector driver selector)
+  (web-driver-element driver
+    (session-command driver 
+      'POST "/element" 
+      (json (object ("using" "css selector") ("value" ,selector))))))
 
-(define-public elements-by-css-selector
-  (with-default-driver
-    (lambda (driver selector)
-      (map
-        (lambda (element-object) (web-driver-element driver element-object))
-        (session-command driver 
-          'POST "/elements" 
-          (json (object ("using" "css selector") ("value" ,selector))))))))
+(define-public-with-driver (elements-by-css-selector driver selector)
+  (map
+    (lambda (element-object) (web-driver-element driver element-object))
+    (session-command driver 
+      'POST "/elements" 
+      (json (object ("using" "css selector") ("value" ,selector))))))
 
-(define-public element-by-id
-  (with-default-driver
-    (lambda (driver id)
-      (element-by-css-selector driver (string-append "#" id)))))
+; TODO check that the id and class name are valid
+; They should be at least one character and not contain any space characters
 
-(define-public elements-by-id
-  (with-default-driver
-    (lambda (driver id)
-      (elements-by-css-selector driver (string-append "#" id)))))
+(define-public-with-driver (element-by-id driver id)
+  (element-by-css-selector driver (string-append "#" id)))
+
+(define-public-with-driver (elements-by-id driver id)
+  (elements-by-css-selector driver (string-append "#" id)))
   
-(define-public element-by-class-name
-  (with-default-driver
-    (lambda (driver class-name)
-      (element-by-css-selector driver (string-append "." class-name)))))
+(define-public-with-driver (element-by-class-name driver class-name)
+  (element-by-css-selector driver (string-append "." class-name)))
 
-(define-public elements-by-class-name
-  (with-default-driver
-    (lambda (driver class-name)
-      (elements-by-css-selector driver (string-append "." class-name)))))
+(define-public-with-driver (elements-by-class-name driver class-name)
+  (elements-by-css-selector driver (string-append "." class-name)))
 
 (define-public element-by-tag-name element-by-css-selector)
 

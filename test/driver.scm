@@ -21,7 +21,7 @@
         (lambda (driver)
           (assert (web-driver? driver))
           (assert (web-driver-open? driver))
-          (assert (equal? driver (open-default-driver)))
+          (assert (equal? driver (get-default-driver)))
           (set! closed driver)
           42))))
   (assert (not (web-driver-open? closed))))
