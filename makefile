@@ -3,6 +3,9 @@ default: .tested
 .tested: web/*.scm test/*.scm
 	hdt
 	touch $@
+
+clean:
+	rm -rf .tested
 	
 GUILE_CONFIG ?= guile-config
 SITE_DIR ?= $(shell $(GUILE_CONFIG) info sitedir)
