@@ -1,4 +1,2 @@
-- direct webdriver connection (host, port)
-- announce on guile-user mailing list
-- complete cookies, delete-all-cookies is implemented, but not tested.
 - Support for firefox
+- complete all specification

@@ -1,9 +1,9 @@
 (define-module (web driver))
 
 (use-modules
-  (ice-9 iconv) (ice-9 match) (ice-9 popen)
+  (ice-9 hash-table) (ice-9 iconv) (ice-9 match) (ice-9 popen)
   (json)
-  (srfi srfi-1) (srfi srfi-27)
+  (srfi srfi-1) (srfi srfi-9) (srfi srfi-27)
   (web client) (web request) (web response) (web server))
 
 (define web-server #f)
@@ -157,9 +157,6 @@
 (define-public-with-driver (title driver)
   (session-command driver 'GET "/title" #f))
 
-(define-public-with-driver (delete-all-cookies driver)
-  (session-command driver 'DELETE "/cookie" #f))
-
 ;;; Elements
 
 ; XXX elements are returned as a json object with a single weird key
@@ -270,4 +267,58 @@
 
 (define-public (send-keys element text)
   (element-command element 'POST "/value" (json (object ("text" ,text)))))
+
+;;; Cookies
+
+(define-record-type <cookie>
+  (make-cookie name value path domain secure http-only expiry same-site)
+  cookie?
+  (name       cookie-name)
+  (value      cookie-value)
+  (path       cookie-path)
+  (domain     cookie-domain)
+  (secure     cookie-secure)
+  (http-only  cookie-http-only)
+  (expiry     cookie-expire)
+  (same-site  cookie-same-site))
+
+(export 
+  cookie-name cookie-value cookie-path cookie-domain cookie-secure 
+  cookie-http-only cookie-expire cookie-same-site)
+
+(define (parse-cookie hash)
+  (make-cookie 
+    (hash-ref hash "name") 
+    (hash-ref hash "value") 
+    (hash-ref hash "path" "/")
+    (hash-ref hash "domain")
+    (hash-ref hash "secure" #f)
+    (hash-ref hash "httpOnly" #f)
+    (hash-ref hash "expiry" #f)
+    (hash-ref hash "samesite" #f)))
+
+(define-public-with-driver (get-all-cookies driver)
+  (map
+    parse-cookie
+    (session-command driver 'GET "/cookie" #f)))
+
+(define-public-with-driver (get-named-cookie driver name)
+  (parse-cookie (session-command driver 'GET (format #f "/cookie/~a" name) #f)))
+
+(define-public-with-driver 
+  (add-cookie driver #:key name value path domain secure http-only expiry same-site)
+  (let* ((add (lambda (key value) (if value (list (cons key value)) '())))
+         (args
+           (append 
+             (add "name" name) (add "value" value) (add "path" path) (add "domain" domain) 
+             (add "secure" secure) (add "httpOnly" http-only) (add "expiry" expiry) 
+             (add "samesite" same-site)))
+         (hash (alist->hash-table (list (cons "cookie" (alist->hash-table args))))))
+    (session-command driver 'POST "/cookie" hash)))
+
+(define-public-with-driver (delete-named-cookie driver name)
+  (session-command driver 'DELETE (format #f "/cookie/~a" name) #f))
+
+(define-public-with-driver (delete-all-cookies driver)
+  (session-command driver 'DELETE "/cookie" #f))
 

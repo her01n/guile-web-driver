@@ -77,12 +77,6 @@ only to call *close-web-driver* without argument when done.
   Returns the title of the current page as string.
   Returns empty string if the page did not set a title.
 
-### Cookies
-
-- **delete-all-cookies [driver]**
-
-  Deletes all stored cookies for all sites.
-
 ### Finding Elements
 
 - **element-by-css-selector [driver] selector [#:from element]**
@@ -224,4 +218,66 @@ only to call *close-web-driver* without argument when done.
 
   Simulates user typing the text with the focus on the element.
 
+
+### Cookies
+
+- **cookie-name cookie**
+
+  The name of the cookie.
+
+- **cookie-value cookie**
+
+  The cookie value.
+
+- **cookie-path cookie**
+
+  The cookie path. For example "/". Attribute "Path".
+
+- **cookie-domain cookie**
+
+  The domain the cookie is visible to. Attribute "Domain".
+
+- **cookie-secure cookie**
+
+  Whether the cookie is a secure cookie. Attribute "Secure".
+
+- **cookie-http-only cookie**
+
+  Whether the cookie is an HTTP only cookie. Attribute "HttpOnly".
+
+- **cookie-expiry cookie**
+
+  When the cookie expires, specified in seconds since Unix Epoch.
+  Calculated from the value of attribute "Max-Age".
+  May be *#f* for a session cookie.
+
+- **cookie-same-site cookie**
+
+  Same Site policy value. May be "Lax", "Strict", or *#f*.
+
+- **get-all-cookies [driver]**
+
+  List of cookies associated with the current browsing context (domain and path).
+
+- **get-named-cookie [driver] name**
+
+  Get the cookie with the given name, associated with the current browsing contenxt.
+  Throws an exception if there is no such cookie.
+
+- **add-cookie [driver] #:name name #:value value [#:path path] [#:domain domain]**
+  **[#:secure secure] [#:http-only http-only] [#:expiry expiry] [#:same-site same-site]**
+
+  Add a cookie.
+  The path defaults to "/".
+  The domain defaults to current browser domain.
+  The expiry defaults to a session cookie.
+
+- **delete-named-cookie [driver] name**
+
+  Delete the named cookie associated with the current browsing context.
+  If the cookie does not exist, does nothing.
+
+- **delete-all-cookies [driver]**
+
+  Deletes all cookies associated with the current browsing context.
 

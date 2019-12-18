@@ -3,7 +3,11 @@
 (use-modules
   (ice-9 iconv) (ice-9 match) (ice-9 threads)
   (hdt hdt)
-  (web client) (web driver) (web request) (web response) (web server) (web uri))
+  (srfi srfi-1)
+  (web client) (web request) (web response) (web server) (web uri))
+
+(use-modules
+  (web driver))
 
 (test set-web-handler!
   (set-web-handler! (lambda (request body) (values '() "test")))
@@ -178,6 +182,37 @@
     (click (element-by-id "submit"))
     (assert (equal? "http://localhost:8080/submit?text=keys" (current-url)))))
 
+(test cookies
+  (set-web-handler!
+    (lambda (request body)
+      (values '((set-cookie . "name=value")) "ok")))
+  (navigate-to "http://localhost:8080")
+  (test get-all-cookies
+    (let ((cookies (get-all-cookies)))
+      (assert (equal? 1 (length cookies)))
+      (assert (equal? "name" (cookie-name (first cookies))))
+      (assert (equal? "value" (cookie-value (first cookies))))))
+  (test get-named-cookie
+    (let ((cookie (get-named-cookie "name")))
+      (assert (equal? "name" (cookie-name cookie)))
+      (assert (equal? "value" (cookie-value cookie)))))
+  (test add-cookie
+    (navigate-to "http://localhost:8080/path/component/test.html")
+    (add-cookie #:name "session" #:value "77" #:path "/path")
+    (let ((cookie (get-named-cookie "session")))
+      (assert cookie)
+      (assert (equal? "77" (cookie-value cookie)))
+      (assert (equal? "/path" (cookie-path cookie)))))
+  (test delete-named-cookie
+    (add-cookie #:name "session" #:value "77")
+    (delete-named-cookie "name")
+    (let ((cookies (get-all-cookies)))
+      (assert (equal? 1 (length cookies)))
+      (assert (equal? "session" (cookie-name (first cookies))))))
+  (test delete-all-cookies
+    (delete-all-cookies)
+    (assert (null? (get-all-cookies)))))
+
 #!
 (test seo
   (navigate-to "http://duckduckgo.com")
@@ -186,5 +221,4 @@
   (assert (element-by-css-selector "a[href='https://github.com/her01n/guile-web-driver']")))
 !#
     
-; TODO test cookies
 
