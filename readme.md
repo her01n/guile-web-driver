@@ -48,6 +48,10 @@ only to call *close-web-driver* without argument when done.
   Closes the session after the proc returns or throws an exception.
   Returns the value that the *proc* returned.
 
+### Timeouts
+
+> TODO
+
 ### Navigation
 
 - **navigate-to [driver] url**
@@ -76,6 +80,110 @@ only to call *close-web-driver* without argument when done.
 
   Returns the title of the current page as string.
   Returns empty string if the page did not set a title.
+
+### Windows
+
+Let's define **window** as a browser window, tab or a similar concept, 
+capable of independent navigation.
+In the specification, the window is also called **top-level browsing context**.
+There is always one *current* window, that would receive navigation calls.
+One window is created and made current implicitly at the session opening.
+
+- **current-window [driver]**
+  
+  Returns the current window.
+
+- **close-window [driver]**
+
+  Close the current window.
+  The driver may close this session and all subsequent method calls would fail.
+
+> TODO optionally accept window argument
+
+- **all-windows [driver]**
+
+  Returns the list of all windows of this session.
+
+- **open-new-window [driver]**
+
+  Open a new window.
+  Return the new window.
+  If the browser does not support windows, open a new tab instead.
+
+- **open-new-tab [driver]**
+
+  Open a new browser tab.
+  Return the new window.
+  If the browser does not support browser tabs, open a new window instead.
+
+- **switch-to window**
+
+  Makes the window current.
+
+### Frames
+
+> TODO
+
+### Rectangle Record
+
+> TODO implement
+
+We define **<rect>** record type to be used for all screen geometry methods.
+It contains four fields: *x*, *y*, *width* and *height*.
+All values are integers.
+
+- **make-rect x y width height**
+
+  Returns new rectangle.
+
+- **rect-x rect**
+- **rect-y rect**
+- **rect-width rect**
+- **rect-height rect**
+
+  Gets a field value.
+
+### Resizing and Positioning Windows
+
+> TODO implement
+
+- **window-rect [driver]**
+
+  Returns a screen position and dimension of the current window.
+
+- **set-window-position [driver] x y**
+- **set-window-size [driver] width height**
+- **set-window-rect [driver] rect**
+
+  Sets the screen position and/or dimension of the current window.
+  This implicitly restores the window state to normal.
+  It may not be possible to honor the new position exactly,
+  in this case the window is moved and resized to the nearest possible position and dimension.
+  Returns the new actual window position and dimension.
+
+- **minimize-window [driver]**
+
+  Minimize (iconify) the current window.
+
+- **maximize-window [driver]**
+
+  Maximize the current window.
+  If this is not supported by the window manager,
+  resize the window to the maximum possible size without going full screen.
+
+- **full-screen-window [driver]**
+
+  Makes the current window full screen.
+  If this is not supported by the window manager, maximize the window.
+
+- **minimize-window [driver]**
+
+  Minimize (iconify) the current window.
+  Does nothing if this is not supported by the window manager.
+
+- **restore-window [driver]**
+
+  Restores the window to normal, not maximized, full screen or minimized.
 
 ### Finding Elements
 
@@ -197,6 +305,12 @@ only to call *close-web-driver* without argument when done.
 - **tag name element**
 
   Returns the tag name of the element.
+
+- **rect element**
+
+  Returns position and dimension of the element relative to the document element.
+
+> TODO implement
 
 - **enabled? element**
 

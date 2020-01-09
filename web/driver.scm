@@ -157,6 +157,44 @@
 (define-public-with-driver (title driver)
   (session-command driver 'GET "/title" #f))
 
+;;; Windows
+
+(define (web-driver-window driver window-object)
+  (list 'web-driver-window driver window-object))
+
+(define-public-with-driver (current-window driver)
+  (web-driver-window driver
+    (session-command driver 'GET "/window" #f)))
+
+(define-public-with-driver (close-window driver)
+  (session-command driver 'DELETE "/window" (json (object)))
+  ; XXX chromedriver would keep the deleted window currect, 
+  ; causing all following navigation calls to fail.
+  (switch-to (first (all-windows driver))))
+
+(define-public-with-driver (all-windows driver)
+  (map
+    (lambda (window-object) (web-driver-window driver window-object))
+    (session-command driver 'GET "/window/handles" #f)))
+
+(define (new-window driver type)
+  (web-driver-window 
+    driver
+    (hash-ref
+      (session-command driver 'POST "/window/new" (json (object ("type" ,type))))
+      "handle")))
+
+(define-public-with-driver (open-new-window driver)
+  (new-window driver "window"))
+
+(define-public-with-driver (open-new-tab driver)
+  (new-window driver "tab"))
+
+(define-public (switch-to target)
+  (match target
+    (('web-driver-window driver handle)
+     (session-command driver 'POST "/window" (json (object ("handle" ,handle)))))))
+
 ;;; Elements
 
 ; XXX elements are returned as a json object with a single weird key

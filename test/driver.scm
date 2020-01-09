@@ -60,6 +60,43 @@
     (navigate-to "http://localhost:8080/")
     (assert (equal? "the title" (title)))))
 
+(test windows
+  (test open-close-windows
+    (assert (equal? 1 (length (all-windows))))
+    (open-new-window)
+    (assert (equal? 2 (length (all-windows))))
+    (close-window)
+    (assert (equal? 1 (length (all-windows)))))
+  (hook
+    (define (close-other-windows)
+      (when (> (length (all-windows)) 1) 
+        (close-window)
+        (close-other-windows)))
+    (close-other-windows))
+  (test open-new-window
+    (let ((window (open-new-window)))
+      (assert (member window (all-windows)))))
+  (test open-new-tab
+    (let ((window (open-new-tab)))
+      (assert (member window (all-windows)))))
+  (test switch-to-window
+    (open-new-window)
+    (match-let (((one two) (all-windows)))
+      (assert (not (equal? one two)))
+      (switch-to one)
+      (assert (equal? one (current-window)))
+      (switch-to two)
+      (assert (equal? two (current-window)))))
+  (test independent-navigation
+    (open-new-window)
+    (match-let (((one two) (all-windows)))
+      (switch-to one)
+      (navigate-to "http://localhost:9753/")
+      (switch-to two)
+      (navigate-to "http://localhost:8642/")
+      (switch-to one)
+      (assert (equal? "http://localhost:9753/" (current-url))))))
+
 (test finding-elements
   (test element-by-css-selector
     (set-web-handler! (const-html "<html><body><div type='text'>content</div></body></html>"))
