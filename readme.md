@@ -120,9 +120,36 @@ One window is created and made current implicitly at the session opening.
 
   Makes the window current.
 
-### Frames
+### Browsing Context
 
-> TODO
+**Browsing context** is either the window or a **<frame>**/**<iframe>** element.
+There is always one **current browsing context**, that recieves content calls,
+for example **element-by-...** methods.
+The current window is selected as current browsing context at session start,
+after navigation step, switching to a different window or similar.
+
+- **switch-to frame**
+
+  Makes the frame the current browsing context.
+  **frame** must be a **<frame>** or **<iframe>** element.
+  The frame must be a direct child of the current browser context.
+
+> TODO allow switching to any frame, not only to the direct child.
+
+- **switch-to [driver] n**
+
+  Makes the **n**-th child frame of the current browsing context the current browsing context.
+  **n** is a zero-based integer.
+
+- **switch-to-parent [driver]**
+
+  If the current browsing context is a frame,
+  switch to it's parent frame, or to the window if there is no parent frame.
+  Does nothing if the current browsing context is a window.
+
+- **switch-to-window [driver]**
+
+  Makes the current window the current browsing context.
 
 ### Rectangle Record
 

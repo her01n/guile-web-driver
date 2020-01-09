@@ -190,17 +190,32 @@
 (define-public-with-driver (open-new-tab driver)
   (new-window driver "tab"))
 
-(define-public (switch-to target)
+(define-public-with-driver (switch-to driver target)
   (match target
     (('web-driver-window driver handle)
-     (session-command driver 'POST "/window" (json (object ("handle" ,handle)))))))
+     (session-command driver 'POST "/window" (json (object ("handle" ,handle)))))
+    (('web-driver-element driver element)
+     (session-command driver 'POST "/frame" 
+       (json (object ("id" (object ("element-6066-11e4-a52e-4f735466cecf" ,element)))))))
+    ((? number? n)
+     (session-command driver 'POST "/frame" (json (object ("id" ,n)))))))
+
+;;; Browsing Context
+
+(define-public-with-driver (switch-to-parent driver)
+  (session-command driver 'POST "/frame/parent" (json (object))))
+
+(define-public-with-driver (switch-to-window driver)
+  (session-command driver 'POST "/frame" (json (object ("id" #nil)))))
 
 ;;; Elements
 
 ; XXX elements are returned as a json object with a single weird key
 ; with value of the actual element id/reference
 (define (web-driver-element driver element-object)
-  (list 'web-driver-element driver (hash-ref element-object "element-6066-11e4-a52e-4f735466cecf")))
+  (list 
+    'web-driver-element driver 
+    (hash-ref element-object "element-6066-11e4-a52e-4f735466cecf")))
 
 (define (element-command element method path body-scm)
   (match element

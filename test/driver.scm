@@ -97,6 +97,31 @@
       (switch-to one)
       (assert (equal? "http://localhost:9753/" (current-url))))))
 
+(test browsing-context
+  (set-web-handler!
+    (lambda (request body)
+      (values 
+        '((content-type . (text/html))) 
+        (match (uri-path (request-uri request))
+          ("/" "<p>top</p><iframe src='/inner.html'></iframe>")
+          ("/inner.html" "<p>inner</p>")
+          (_ "<p>not found</p>")))))
+  (navigate-to "http://localhost:8080")
+  (test switch-to-frame
+    (switch-to (element-by-tag-name "iframe"))
+    (assert (equal? "inner" (text (element-by-tag-name "p")))))
+  (test switch-to-nth
+    (switch-to 0)
+    (assert (equal? "inner" (text (element-by-tag-name "p")))))
+  (test switch-to-parent
+    (switch-to (element-by-tag-name "iframe"))
+    (switch-to-parent)
+    (assert (equal? "top" (text (element-by-tag-name "p")))))
+  (test switch-to-window
+    (switch-to (element-by-tag-name "iframe"))
+    (switch-to-window)
+    (assert (equal? "top" (text (element-by-tag-name "p"))))))
+
 (test finding-elements
   (test element-by-css-selector
     (set-web-handler! (const-html "<html><body><div type='text'>content</div></body></html>"))
