@@ -122,6 +122,47 @@
     (switch-to-window)
     (assert (equal? "top" (text (element-by-tag-name "p"))))))
 
+(test resizing-and-positioning-windows
+  (test set-window-position
+    (set-window-position 20 30)
+    (let ((rect (window-rect)))
+      (assert (equal? 20 (rect-x rect)))
+      (assert (equal? 30 (rect-y rect)))))
+  (test set-window-size
+    (set-window-size 640 480)
+    (let ((rect (window-rect)))
+      (assert (equal? 640 (rect-width rect)))
+      (assert (equal? 480 (rect-height rect)))))
+  (test set-window-rect-xywh
+    (set-window-rect 30 40 800 600)
+    (assert (equal? (make-rect 30 40 800 600) (window-rect))))
+  (test set-window-rect-rect
+    (set-window-rect (make-rect 40 50 888 666))
+    (assert (equal? (make-rect 40 50 888 666) (window-rect))))
+  (hook (restore))
+  (test minimize
+    ; do not how to test this,
+    ; just check it does not throw
+    (minimize))
+  (test maximize
+    (maximize)
+    (let ((rect (window-rect)))
+      (assert (equal? (0 (rect-x rect))))
+      (assert (>= (rect-width rect) 1280))))
+  (test full-screen
+    (full-screen)
+    (let ((rect (window-rect)))
+      (assert (equal? (0 (rect-x rect))))
+      (assert (equal? (0 (rect-y rect))))
+      (assert (>= (rect-width rect) 1280))))
+  (test restore
+    (set-window-position 20 30)
+    (maximize)
+    (restore)
+    (let ((rect (window-rect)))
+      (assert (equal? 20 (rect-x rect)))
+      (assert (equal? 30 (rect-y rect))))))
+
 (test finding-elements
   (test element-by-css-selector
     (set-web-handler! (const-html "<html><body><div type='text'>content</div></body></html>"))

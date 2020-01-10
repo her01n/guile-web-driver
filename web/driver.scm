@@ -208,6 +208,57 @@
 (define-public-with-driver (switch-to-window driver)
   (session-command driver 'POST "/frame" (json (object ("id" #nil)))))
 
+;;; Rectangle Record
+
+(define-record-type <rect>
+  (make-rect x y width height)
+  rect?
+  (x       rect-x)
+  (y       rect-y)
+  (width   rect-width)
+  (height  rect-height))
+
+(export make-rect rect? rect-x rect-y rect-width rect-height)
+
+;;; Resizing and Positioning Windows
+
+(define (result->rect result)
+  (let* ((x (hash-ref result "x"))
+         (y (hash-ref result "y"))
+         (width (hash-ref result "width"))
+         (height (hash-ref result "height")))
+    (make-rect x y width height)))
+
+(define-public-with-driver (window-rect driver)
+  (result->rect (session-command driver 'GET "/window/rect" #f)))
+
+(define-public-with-driver (set-window-position driver x y)
+  (set-window-rect driver x y #nil #nil))
+
+(define-public-with-driver (set-window-size driver width height)
+  (set-window-rect driver #nil #nil width height))
+
+(define-public-with-driver (set-window-rect driver #:rest args)
+  (match args
+    ((x y width height)
+     (result->rect 
+       (session-command driver 'POST "/window/rect" 
+         (json (object ("x" ,x) ("y" ,y) ("width" ,width) ("height" ,height))))))
+    ((($ <rect> x y width height))
+     (set-window-rect driver x y width height))))
+
+(define-public-with-driver (minimize driver)
+  (session-command driver 'POST "/window/minimize" (json (object))))
+
+(define-public-with-driver (maximize driver)
+  (session-command driver 'POST "/window/maximize" (json (object))))
+
+(define-public-with-driver (full-screen driver)
+  (session-command driver 'POST "/window/fullscreen" (json (object))))
+
+(define-public-with-driver (restore driver)
+  (set-window-rect driver #nil #nil #nil #nil))
+
 ;;; Elements
 
 ; XXX elements are returned as a json object with a single weird key

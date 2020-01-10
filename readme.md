@@ -153,8 +153,6 @@ after navigation step, switching to a different window or similar.
 
 ### Rectangle Record
 
-> TODO implement
-
 We define **<rect>** record type to be used for all screen geometry methods.
 It contains four fields: *x*, *y*, *width* and *height*.
 All values are integers.
@@ -162,6 +160,10 @@ All values are integers.
 - **make-rect x y width height**
 
   Returns new rectangle.
+
+- **rect? object**
+
+  Checks if object is a **rect**.
 
 - **rect-x rect**
 - **rect-y rect**
@@ -171,8 +173,6 @@ All values are integers.
   Gets a field value.
 
 ### Resizing and Positioning Windows
-
-> TODO implement
 
 - **window-rect [driver]**
 
@@ -188,29 +188,27 @@ All values are integers.
   in this case the window is moved and resized to the nearest possible position and dimension.
   Returns the new actual window position and dimension.
 
-- **minimize-window [driver]**
+- **minimize [driver]**
 
   Minimize (iconify) the current window.
+  Does nothing if this is not supported by the window manager.
 
-- **maximize-window [driver]**
+- **maximize [driver]**
 
   Maximize the current window.
   If this is not supported by the window manager,
   resize the window to the maximum possible size without going full screen.
 
-- **full-screen-window [driver]**
+- **full-screen [driver]**
 
   Makes the current window full screen.
   If this is not supported by the window manager, maximize the window.
 
-- **minimize-window [driver]**
-
-  Minimize (iconify) the current window.
-  Does nothing if this is not supported by the window manager.
-
-- **restore-window [driver]**
+- **restore [driver]**
 
   Restores the window to normal, not maximized, full screen or minimized.
+
+> TODO all these methods may accept window as an argument
 
 ### Finding Elements
 
