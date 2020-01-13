@@ -247,6 +247,20 @@
     (set-web-handler! (const-html "<div>content</div>"))
     (navigate-to "http://localhost:8080")
     (assert (equal? "div" (tag-name (element-by-tag-name "div")))))
+  (test rect
+    (set-web-handler! 
+      (const-html 
+        "<html>
+           <body style='margin-left: 1px; margin-top: 2px;'>
+             <div style='width: 3px; height: 4px; background: red;'>
+             </div>
+           </body>
+         </html>"))
+    (navigate-to "http://localhost:8080")
+    (assert 
+      (equal?
+        (make-rect 1 2 3 4)
+        (rect (element-by-tag-name "div")))))
   (test enabled?
     (set-web-handler!
       (const-html 

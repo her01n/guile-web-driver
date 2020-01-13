@@ -358,6 +358,10 @@
 (define-public (tag-name element)
   (element-command element 'GET "/name" #f))
 
+(define-public (rect element)
+  (result->rect
+    (element-command element 'GET "/rect" #f)))
+
 (define-public (enabled? element)
   (element-command element 'GET "/enabled" #f))
 

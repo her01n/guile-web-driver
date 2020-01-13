@@ -1,2 +1,5 @@
+- Complete all commands from specification
+- Remove executing 'sh', i do not really need it
 - Support for firefox
-- complete all specification
+- with-web-driver should accept arguments
+- test-web-handler method, that installs the web server and navigates to it
