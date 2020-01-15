@@ -299,6 +299,45 @@
     (click (element-by-id "submit"))
     (assert (equal? "http://localhost:8080/submit?text=keys" (current-url)))))
 
+(test document
+  (test page-source
+    (set-web-handler! (const-html "<html><head></head><body>hello</body></html>"))
+    (navigate-to "http://localhost:8080")
+    (assert (equal? "<html><head></head><body>hello</body></html>" (page-source))))
+  (test execute-javascript
+    (set-web-handler! (const-html "<div id='d'>content</div>"))
+    (navigate-to "http://localhost:8080")
+    (test execute
+      (execute-javascript "window.location.href = 'http://localhost:1234/'")
+      (assert (equal? "http://localhost:1234/" (current-url))))
+    (test return-value
+      (assert (equal? 7 (execute-javascript "return 3 + 4"))))
+    (test pass-parameters
+      (assert (equal? 7 (execute-javascript "return arguments[0] + arguments[1]" 3 4))))
+    ; TODO pass list
+    (test pass-element
+      (let ((div (element-by-id "d")))
+        (execute-javascript "arguments[0].innerHTML = 'updated'" div)
+        (assert (equal? "updated" (text div)))))
+    (test return-element
+      (let ((div (execute-javascript "return document.getElementById('d')")))
+        (assert (equal? "content" (text div)))))
+    (test return-list
+      (assert (equal? (list 1 2) (execute-javascript "return [1, 2]"))))
+    (test return-object
+      (let ((table (execute-javascript "var r = new Object(); r.key0 = 'value0'; return r;")))
+        (assert (hash-table? table))
+        (assert (equal? "value0") (hash-ref table "key0")))))
+  (test callback
+    (set-web-handler! (const-html "hello"))
+    (navigate-to "http://localhost:8080/")
+    (assert
+      (equal?
+        42
+        (execute-javascript-async
+          "callback = arguments[0];
+           window.setTimeout(function () { callback(42); }, 1);")))))
+
 (test cookies
   (set-web-handler!
     (lambda (request body)

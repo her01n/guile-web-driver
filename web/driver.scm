@@ -268,6 +268,11 @@
     'web-driver-element driver 
     (hash-ref element-object "element-6066-11e4-a52e-4f735466cecf")))
 
+(define (element-object? element-object)
+  (and
+    (hash-table? element-object)
+    (hash-ref element-object "element-6066-11e4-a52e-4f735466cecf")))
+
 (define (element-command element method path body-scm)
   (match element
     (('web-driver-element driver element)
@@ -375,6 +380,51 @@
 
 (define-public (send-keys element text)
   (element-command element 'POST "/value" (json (object ("text" ,text)))))
+
+;;; Document
+
+(define-public-with-driver (page-source driver)
+  (session-command driver 'GET "/source" #f))
+
+(define (scm->javascript value)
+  (match value
+    (#t #t)
+    (#f #f)
+    (#nil #nil)
+    ((? number? n) n)
+    ((? string? s) s)
+    (('web-driver-element driver handle)
+     (json (object ("element-6066-11e4-a52e-4f735466cecf" ,handle))))
+    ((? list? l) (map scm->javascript l))))
+
+(define (javascript->scm driver value)
+  (match value
+    (#t #t)
+    (#f #f)
+    (#nil #nil)
+    ((? number? n) n)
+    ((? string? s) s)
+    ((? element-object? r) (web-driver-element driver r))
+    ((? list? l) (map (lambda (value) (javascript->scm driver value)) l))
+    ((? hash-table? t)
+     (alist->hash-table
+       (hash-map->list
+         (lambda (key value)
+           (cons key (javascript->scm driver value)))
+         t)))))
+
+(define (execute driver path body arguments)
+  (let ((js-args (map scm->javascript arguments)))
+    (javascript->scm driver
+      (session-command 
+        driver 'POST path
+        (json (object ("script" ,body) ("args" ,js-args)))))))
+
+(define-public-with-driver (execute-javascript driver body #:rest arguments)
+  (execute driver "/execute/sync" body arguments))
+
+(define-public-with-driver (execute-javascript-async driver body #:rest arguments)
+  (execute driver "/execute/async" body arguments))
 
 ;;; Cookies
 

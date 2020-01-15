@@ -357,6 +357,49 @@ All values are integers.
 
   Simulates user typing the text with the focus on the element.
 
+### Document
+
+- **page-source [driver]**
+
+  Gets the *html* source of the current browser context (window or frame).
+
+- **execute-javascript [driver] body [arguments ...]**
+
+  Execute javascript in the current browsing context.
+  **body** is a string, it may be a single statement or multiple statements separated by ";".
+  If a statement returns a value with **return**, this value is returned by this method.
+  Element objects are returned as interchangable with objects returned by **element-by-...* methods.
+  Other javascript objects are returned as **hash-table**s.
+  Otherwise return **#nil**.
+  Arguments are passed as a function arguments. 
+  They can be accessed through *arguments* Array-like variable.
+  This allows passing elemented returned by **element-by-...** methods to javascript.
+  It may be practical to pass strings this way to avoid escaping issues.
+
+  Examples:
+
+  ```scheme
+  (execute-javascript "return 3 + 4") => 7
+  (execute-javascript "return arguments[0] * 2;" 2) => 4
+  (execute-javasctipt "arguments[0].innerHTML = 'text'; return 1;" (element-by-id "id"))
+  (text (execute-javascript "return document.getElementById('id');")) => "text"
+  ```
+
+- **execute-javascript-async [driver] body [arguments ...]**
+
+  Executes javascript and waits for the callback.
+  Calllback function is appended to the **arguments** variable.
+  This method returns when this function is called.
+  The first argument of the function call is the return value.
+  This method is still subject to configured timeout.
+
+  Example:
+
+  ```scheme
+  (execute-javascript-async 
+    "callback = arguments[0];
+     window.setTimeout(function() { callback(42); }, 1);") => 42
+  ```
 
 ### Cookies
 
