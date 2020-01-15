@@ -137,6 +137,29 @@
                (apply proc args)
                (apply proc (get-default-driver) args)))))))
 
+;;; Timeouts
+
+(define-public-with-driver (set-script-timeout driver #:optional timeout)
+  (let ((value (match timeout ((? number? n) n) (#f 30000) (#:never #nil))))
+    (session-command driver 'POST "/timeouts" (json (object ("script" ,value))))))
+
+(define-public-with-driver (get-script-timeout driver)
+  (match (hash-ref (session-command driver 'GET "/timeouts" #f) "script")
+    ((? number? n) n)
+    (#nil #:never)))
+
+(define-public-with-driver (set-page-load-timeout driver #:optional (timeout 300000))
+  (session-command driver 'POST "/timeouts" (json (object ("pageLoad" ,timeout)))))
+
+(define-public-with-driver (get-page-load-timeout driver)
+  (hash-ref (session-command driver 'GET "/timeouts" #f) "pageLoad"))
+
+(define-public-with-driver (set-implicit-timeout driver #:optional (timeout 0))
+  (session-command driver 'POST "/timeouts" (json (object ("implicit" ,timeout)))))
+
+(define-public-with-driver (get-implicit-timeout driver)
+  (hash-ref (session-command driver 'GET "/timeouts" #f) "implicit"))
+
 ;;; Navigation
 
 (define-public-with-driver (navigate-to driver url)

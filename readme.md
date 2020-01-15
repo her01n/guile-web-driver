@@ -50,7 +50,34 @@ only to call *close-web-driver* without argument when done.
 
 ### Timeouts
 
-> TODO
+- **set-script-timeout [driver] [milliseconds|#:never]**
+
+  Sets the timeout for executing scripts
+  with methods **execute-javascript** and **execute-javascript-async**.
+  Special value **#:never** allows the script to run indefinitely.
+  Calling without arguments sets the timeout to the default value, 30 seconds.
+
+- **get-script-timeout [driver]**
+
+  Returns the current script timeout in milliseconds, or **#:never**.
+
+- **set-page-load-timeout [driver] [milliseconds]**
+
+  Sets the timeout for page loading, for example with **navigate-to** method.
+  Calling without arguments sets the timeout to the default value, 5 minutes.
+
+- **get-page-load-timeout [driver]**
+
+  Returns the current page load timeout in milliseconds.
+
+- **set-implicit-timeout [driver] [milliseconds]**
+
+  Sets the timeout for element location, for example with **element-by-id** method.
+  Calling without arguments sets the timeout to the default value, 0 milliseconds.
+
+- **get-implicit-timeout [driver]**
+
+  Returns the current implicit timeout in milliseconds.
 
 ### Navigation
 

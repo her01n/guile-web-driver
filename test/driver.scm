@@ -33,6 +33,36 @@
 ; Use only one driver, default, to speed up the tests
 (hook (close-web-driver))
 
+(test timeouts
+  (test script-timeout
+    (test milliseconds
+      (set-script-timeout 20000)
+      (assert (equal? 20000 (get-script-timeout))))
+    (test never
+      (set-script-timeout #:never)
+      (assert (equal? #:never (get-script-timeout))))
+    (test default
+      (set-script-timeout)
+      (assert (equal? 30000 (get-script-timeout)))))
+  (test page-load-timeout
+    (test milliseconds
+      (set-page-load-timeout 60000)
+      (assert (equal? 60000 (get-page-load-timeout))))
+    (test default)
+      (set-page-load-timeout)
+      (assert (equal? 300000 (get-page-load-timeout))))
+  (test implicit-timeout
+    (test milliseconds
+      (set-implicit-timeout 1000)
+      (assert (equal? 1000 (get-implicit-timeout))))
+    (test default
+      (set-implicit-timeout)
+      (assert (equal? 0 (get-implicit-timeout)))))
+  (test independent
+    (set-script-timeout 10000)
+    (set-page-load-timeout 20000)
+    (assert (equal? 10000 (get-script-timeout)))))
+  
 (define (const-html html)
   (lambda (request body) (values '((content-type . (text/html))) html)))
 
