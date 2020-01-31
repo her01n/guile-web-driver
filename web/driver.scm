@@ -503,3 +503,82 @@
 (define-public-with-driver (delete-all-cookies driver)
   (session-command driver 'DELETE "/cookie" #f))
 
+;;; Actions
+
+(use-modules (web driver key))
+
+(define-public (key-down key) (list 'key-down (key->unicode-char key)))
+
+(define-public (key-up key) (list 'key-up (key->unicode-char key)))
+
+(define-public mouse-move
+  (lambda* (x y #:optional duration) (list 'mouse-move x y duration)))
+
+(define (button-index button)
+  (match button
+    (#:left 0)
+    (#:middle 1)
+    (#:right 2)
+    ((? number? n) n)))
+
+(define-public (mouse-down button) (list 'mouse-down (button-index button)))
+
+(define-public (mouse-up button) (list 'mouse-up (button-index button)))
+
+(define-public (wait duration) (list 'wait duration))
+
+(define-public (release-all) (list 'release-all))
+
+(define pause-action (json (object ("type" "pause"))))
+
+(define-public-with-driver (perform driver #:rest actions)
+  (define (send-actions key-actions mouse-actions)
+    (session-command
+      driver 'POST "/actions"
+      (json
+        (object
+          ("actions"
+            (array
+              (object 
+                ("type" "key") 
+                ("id" "keyboard0") 
+                ("actions" ,key-actions))
+              (object
+                ("type" "pointer")
+                ("id" "mouse0")
+                ("actions" ,mouse-actions))))))))
+  (define (release-actions)
+    (session-command driver 'DELETE "/actions" (json (object))))
+  (define (perform-actions key-actions mouse-actions actions)
+    (define (key-action action)
+      (perform-actions 
+        (cons action key-actions) (cons pause-action mouse-actions) (cdr actions)))
+    (define (mouse-action action)
+      (perform-actions 
+        (cons pause-action key-actions) (cons action mouse-actions) (cdr actions)))
+    (if 
+      (null? actions)
+      (send-actions (reverse key-actions) (reverse mouse-actions))
+      (match (car actions)
+        (('key-down unicode-char) 
+         (key-action (json (object ("type" "keyDown") ("value" ,unicode-char)))))
+        (('key-up unicode-char) 
+         (key-action (json (object ("type" "keyUp") ("value" ,unicode-char)))))
+        (('mouse-down button)
+         (mouse-action (json (object ("type" "pointerDown") ("button" ,button)))))
+        (('mouse-up button)
+         (mouse-action (json (object ("type" "pointerUp") ("button" ,button)))))
+        (('mouse-move x y duration)
+         (mouse-action 
+           (json 
+             (object 
+               ("type" "pointerMove") ("x" ,x) ("y" ,y) ("origin" "viewport") 
+               ("duration" ,(or duration 0))))))
+        (('wait duration)
+         (key-action (json (object ("type" "pause") ("duration" ,duration)))))
+        (('release-all)
+         (perform-actions key-actions mouse-actions '())
+         (release-actions)
+         (apply perform driver (cdr actions))))))
+  (if (not (null? actions)) (perform-actions '() '() actions)))
+

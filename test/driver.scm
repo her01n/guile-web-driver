@@ -1,7 +1,7 @@
 (define-module (test driver))
 
 (use-modules
-  (ice-9 iconv) (ice-9 match) (ice-9 threads)
+  (ice-9 iconv) (ice-9 match) (ice-9 textual-ports) (ice-9 threads)
   (hdt hdt)
   (srfi srfi-1)
   (web client) (web request) (web response) (web server) (web uri))
@@ -398,6 +398,130 @@
   (test delete-all-cookies
     (delete-all-cookies)
     (assert (null? (get-all-cookies)))))
+
+(define events-test-web-handler
+  (const-html
+    "<p id='log'></p>
+     <p id='duration'></p>
+       <script>
+         log = document.getElementById('log');
+         start = 0;
+         function keyDown(e) {
+           if (e.shiftKey) log.textContent += `shift `;
+           log.textContent += `${e.code} down, `;
+           start = new Date().getTime();
+         }
+         document.addEventListener('keydown', keyDown);
+         duration = document.getElementById('duration');
+         function keyUp(e) {
+           if (e.shiftKey) log.textContent += `shift `;
+           log.textContent += `${e.code} up, `;
+           duration.textContent = `${new Date().getTime() - start}`; 
+         }
+         document.addEventListener('keyup', keyUp);
+         function mouseDown(e) {
+           if (e.shiftKey) log.textContent += `shift `;
+           log.textContent += `mouse ${e.button} down (${e.clientX}, ${e.clientY}), `;
+         }
+         document.addEventListener('mousedown', mouseDown);
+         function mouseUp(e) {
+           if (e.shiftKey) log.textContent += `shift `;
+           log.textContent += `mouse ${e.button} up (${e.clientX}, ${e.clientY}), `;
+         }
+         document.addEventListener('mouseup', mouseUp);
+         function mouseMove(e) {
+           if (e.shiftKey) log.textContent += `shift `;
+           log.textContent += `mouse move (${e.clientX}, ${e.clientY}), `;
+         }
+         document.addEventListener('mousemove', mouseMove);
+       </script>"))
+
+(test actions
+  (set-web-handler! events-test-web-handler)
+  (navigate-to "http://localhost:8080")
+  (test keys
+    (test key-down-up
+      (perform (key-down "KeyA") (key-up "KeyA"))
+      (assert (equal? "KeyA down, KeyA up," (text (element-by-id "log")))))
+    (test shift
+      (perform (key-down "shift") (key-down "KeyA") (key-up "KeyA") (key-up "shift"))
+      (assert 
+        (equal? 
+          "shift ShiftLeft down, shift KeyA down, shift KeyA up, ShiftLeft up,"
+          (text (element-by-id "log")))))
+    (test control-character
+      (perform (key-down "\uE00C") (key-up "\uE00C"))
+      (assert (equal? "Escape down, Escape up," (text (element-by-id "log")))))
+    (test single-character
+      (perform (key-down "b") (key-up "b"))
+      (assert (equal? "KeyB down, KeyB up," (text (element-by-id "log")))))
+    (test separate-calls
+      (perform (key-down "c"))
+      (perform (key-up "c"))
+      (assert (equal? "KeyC down, KeyC up," (text (element-by-id "log"))))))
+  (test mouse
+    (test dragndrop
+      (perform (mouse-move 10 20) (mouse-down #:left) (mouse-move 30 40) (mouse-up #:left))
+      (assert
+        (equal?
+          "mouse move (10, 20), mouse 0 down (10, 20), mouse move (30, 40), mouse 0 up (30, 40),"
+          (text (element-by-id "log")))))
+    (test right-click
+      (perform (mouse-move 50 60) (mouse-down #:right) (mouse-up #:right))
+      (assert
+        (equal?
+          "mouse move (50, 60), mouse 2 down (50, 60), mouse 2 up (50, 60),"
+          (text (element-by-id "log")))))
+    (test separate-calls
+      (perform (mouse-move 70 80))
+      (perform (mouse-down #:left) (mouse-up #:left))
+      (assert
+        (equal?
+          "mouse move (70, 80), mouse 0 down (70, 80), mouse 0 up (70, 80),"
+          (text (element-by-id "log"))))))
+  (test key-mouse
+    (test mask
+      (perform
+        (key-down "ShiftLeft") (mouse-move 70 80) (mouse-down #:left) (mouse-up #:left)
+        (key-up "ShiftLeft"))
+      (assert
+        (equal?
+          "shift ShiftLeft down, shift mouse move (70, 80), shift mouse 0 down (70, 80), shift mouse 0 up (70, 80), ShiftLeft up,"
+          (text (element-by-id "log")))))
+    (test order
+      (perform 
+        (mouse-move 90 100) (mouse-down #:left) (key-down "KeyC") (key-up "KeyC")
+        (mouse-up #:left))
+      (assert
+        (equal?
+          "mouse move (90, 100), mouse 0 down (90, 100), KeyC down, KeyC up, mouse 0 up (90, 100),"
+          (text (element-by-id "log"))))))
+  ; TODO chromedriver has bug with the wait, test on firefox
+  ;(test wait
+  ;  (perform (key-down "[") (wait 100) (key-up "["))
+  ;  (let ((duration (string->number (text (element-by-id "duration")))))
+  ;    (format #t "duration = ~a\n" duration)
+  ;    (assert (< (abs (- duration 100)) 20)))))
+  (test mouse-move-with-duration
+    (perform (mouse-move 0 0) (key-down "t") (mouse-move 100 100 100) (key-up "t"))
+    ; (get-line (current-input-port))
+    (let ((duration (string->number (text (element-by-id "duration")))))
+      (assert (< (abs (- duration 100)) 20))))
+  (test release-all
+    (test key-mouse
+      (perform (mouse-move 10 10) (mouse-down #:left) (key-down "x") (release-all))
+      (assert
+        (equal?
+          "mouse move (10, 10), mouse 0 down (10, 10), KeyX down, KeyX up, mouse 0 up (10, 10),"
+          (text (element-by-id "log")))))
+    (test separate-call
+      (perform (mouse-move 10 10) (mouse-down #:left))
+      (perform (key-down "q"))
+      (perform (release-all))
+      (assert
+        (equal?
+          "mouse move (10, 10), mouse 0 down (10, 10), KeyQ down, KeyQ up, mouse 0 up (10, 10),"
+          (text (element-by-id "log")))))))
 
 #!
 (test seo

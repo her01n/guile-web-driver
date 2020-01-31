@@ -3,3 +3,28 @@
 - Support for firefox
 - with-web-driver should accept arguments
 - test-web-handler method, that installs the web server and navigates to it
+- check if these bug are also present in the current chromedriver?
+- report the bug to chromedriver:
+
+POST /session/6b2acd62d23a0e24dd925bd796305385/actions HTTP/1.1
+Content-Length: 174
+Host: localhost:53999
+Connection: close
+
+{"actions" : [{"id" : "keyboard0","type" : "key","actions" : []}, {"id" : "mouse0","type" : "pointer","actions" : [{"button" : 0,"type" : "pointerDown","x" : 10,"y" : 20}]}]}
+
+crashes chromedriver
+
+- report the bug to chromedriver
+
+POST /session/0b91e2565a5276a5740920bf1cf5fdbe/actions HTTP/1.1
+Content-Length: 327
+Host: localhost:33355
+Connection: close
+
+{"actions" : [{"id" : "keyboard0","type" : "key","actions" : [{"type" : "keyDown","value" : "a"}, {"type" : "pause","duration" : 100}, {"type" : "keyUp","value" : "a"}]}, {"id" : "mouse0","type" : "pointer","actions" : [{"type" : "pause","duration" : 0}, {"type" : "pause","duration" : 0}, {"type" : "pause","duration" : 0}]}]}
+
+The pause between the keyDown and the keyUp event takes double the time, 200 milliseconds.
+
+- wish: get-line should accept no argument to read from current input port
+

@@ -490,3 +490,91 @@ All values are integers.
 
   Deletes all cookies associated with the current browsing context.
 
+### Actions
+
+This is a low level interface to generate fine grained input events.
+See [Element Interaction](#element-interaction) for higher level interface.
+
+- **key-down key**
+
+  Simulates user pressing a key on a keyboard.
+  Key repetition does not apply,
+  only one **keydown** event would be fired, even if the key stays pressed for long time.
+  **key** is a string representing the key, it may be:
+
+  - Control character associated with the key. For example "\uE003", "\uE009".
+  - Single unicode character that results from pressing the key on US keyboard layout.
+    For example "a", " ", "[".
+  - [KeyboardEvent.code](https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/code/code_values) value. 
+    For example: "KeyA", "Digit0", "Keypad0", "ControlLeft", "Space", "F4", "ArrowDown". 
+    Code is case insensitive, for example "f4" is accepted.
+
+- **key-up key**
+
+  Simulates user releasing a key on a keyboard.
+  The key must match key previouly pressed with **key-down**,
+  if not the action is silently ignored.
+
+- **mouse-move x y [duration]**
+
+  Simulate user moving mouse pointer to a location.
+  **x**, **y** are coordinates relative to the current viewport.
+  Simulate the cursor movement for the given duration in milliseconds if given.
+  Multiple intermediate events may be fired in this case.
+
+- **mouse-down button**
+
+  Simulates user pressing a mouse button.
+  **button** is either integer index of the button (0 for the left button),
+  or symbol **#:left**, **#:middle**, **#:right**.
+ 
+- **mouse-up button**
+
+  Simulates user releasing a mouse button.
+  **button** should match button previously pressed with **mouse-down**,
+  otherwise the action is silently ignored.
+
+- **wait time**
+
+  Warning: Because of a bug, this does not work correctly with chromedriver.
+
+  Wait before performing following actions.
+  **time** is given in milliseconds.
+
+  ```scheme
+  (perform (key-down "KeyA" (wait 20) (key-up "KeyA")))
+  ```
+
+  is roughly equivalent to 
+
+  ```scheme
+  (perform (key-down "KeyA"))
+  (usleep (* 20 1000))
+  (perform (key-up "KeyA"))
+  ```
+
+  but potentionaly much more precise.
+
+  Note: In specification, this action is called *pause*.
+  We use *wait* because *pause* is a core binding in Guile.
+
+- **release-all**
+
+  Simulates user releasing all currently pressed keys and buttons.
+
+- **perform [driver] action ...**
+
+  Perform the given actions.
+  Returns when all the corresponding events were dispatched.
+
+  Examples:
+
+  ```scheme
+  (perform 
+    (key-down "ShiftRight") (wait 10) (key-down "a") (wait 10) (key-up "a") (wait 10)
+    (key-up "ShiftRight")
+  (perform 
+    (mouse-move 1 1) (key-down "ControlLeft") (mouse-down #:left) 
+    (mouse-move 100 100 1000) (release-all))
+  ```
+
