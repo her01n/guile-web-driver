@@ -149,7 +149,7 @@ One window is created and made current implicitly at the session opening.
 
 ### Browsing Context
 
-**Browsing context** is either the window or a **<frame>**/**<iframe>** element.
+**Browsing context** is either the window or a **\<frame\>**, **\<iframe\>** element.
 There is always one **current browsing context**, that recieves content calls,
 for example **element-by-...** methods.
 The current window is selected as current browsing context at session start,
@@ -158,7 +158,7 @@ after navigation step, switching to a different window or similar.
 - **switch-to frame**
 
   Makes the frame the current browsing context.
-  **frame** must be a **<frame>** or **<iframe>** element.
+  **frame** must be a **\<frame\>** or **\<iframe\>** element.
   The frame must be a direct child of the current browser context.
 
 > TODO allow switching to any frame, not only to the direct child.
@@ -180,7 +180,7 @@ after navigation step, switching to a different window or similar.
 
 ### Rectangle Record
 
-We define **<rect>** record type to be used for all screen geometry methods.
+We define **\<rect\>** record type to be used for all screen geometry methods.
 It contains four fields: *x*, *y*, *width* and *height*.
 All values are integers.
 
@@ -333,7 +333,7 @@ All values are integers.
 - **selected? element**
 
   Returns *#t* if the check box or radio box is checked,
-  or if *<select>* element is selected.
+  or if **\<select\>** element is selected.
   Throws an exception if the element is not selectable.
 
 - **attribute element name**
