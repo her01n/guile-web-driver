@@ -1,7 +1,7 @@
 (define-module (test driver))
 
 (use-modules
-  (ice-9 iconv) (ice-9 match) (ice-9 textual-ports) (ice-9 threads)
+  (ice-9 iconv) (ice-9 match) (ice-9 popen) (ice-9 textual-ports) (ice-9 threads)
   (hdt hdt)
   (srfi srfi-1)
   (web client) (web request) (web response) (web server) (web uri))
@@ -29,6 +29,18 @@
           (set! closed driver)
           42))))
   (assert (not (web-driver-open? closed))))
+
+; XXX is there a better way?
+(define (kill-pipe pipe) (kill (hashq-ref port/pid-table pipe) SIGTERM))
+
+(test open-remote-driver
+  (define pipe (open-pipe* OPEN_WRITE "chromedriver" "--port=4567"))
+  (sleep 1)
+  (hook (kill-pipe pipe) (close-pipe pipe))
+  (define driver (open-web-driver #:url "http://localhost:4567"))
+  (hook (close-web-driver driver))
+  (navigate-to driver "http://localhost:8080")
+  (assert (equal? "http://localhost:8080/" (current-url driver))))
   
 ; Use only one driver, default, to speed up the tests
 (hook (close-web-driver))

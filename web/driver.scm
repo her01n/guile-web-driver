@@ -41,12 +41,29 @@
               (format #f "Request ~a ~a failed with status ~a ~a.\nError: ~a\nMessage: ~a\n" 
                 method uri (response-code response) (response-reason-phrase response) error message))))))))
 
-(define (close-driver-pipe driver-pipe)
-; It is possible that the process has already terminated after the session was deleted
-  (format driver-pipe "kill $DRIVERPID 2>/dev/null\n")
-  (format driver-pipe "wait $DRIVERPID")
-  (format driver-pipe "exit\n")
-  (close-pipe driver-pipe))
+(define (close-driver-pipe pipe)
+  (kill (hashq-ref port/pid-table pipe) SIGTERM)
+  (close-pipe pipe))
+
+(define (open* driver-uri finalizer)
+; wait until the new process starts listening
+  (find
+    (lambda (try)
+      (catch #t
+        (lambda () (request 'GET (format #f "~a/status" driver-uri) #f) #t)
+        (lambda (key . args) (usleep (* 10 1000)) #f)))
+    (iota 100))
+; start a new session
+  (catch #t
+    (lambda ()
+      (let* ((uri (format #f "~a/session" driver-uri))
+             (parameters (json (object ("capabilities" (object)))))
+             (response (request 'POST uri parameters))
+             (session-id (hash-ref response "sessionId")))
+        (list 'web-driver driver-uri session-id finalizer)))
+    (lambda (key . args)
+      (finalizer)
+      (apply throw key args))))
 
 (define (free-listen-port)
   "Find an unused port for server to listen on it"
@@ -55,63 +72,53 @@
   (let ((port (array-ref (getsockname s) 2)))
     (close-port s)
     port))
-      
-(define-public (open-web-driver)
-  "Opens a web driver session. 
-   Caller needs to close this session by calling *close-web-driver* when done."
+
+(define (open-chromedriver)
   (let* ((port (free-listen-port))
-         (driver-pipe (open-output-pipe "sh"))
-         (driver-uri (format #f "http://localhost:~a" port)))
-    (format driver-pipe "chromedriver --port=~a >/dev/null &\n" port)
-    (format driver-pipe "DRIVERPID=$!\n")
-; wait until the new process starts listening
-    (find
-      (lambda (try)
-        (catch #t
-          (lambda () (request 'GET (format #f "~a/status" driver-uri) #f) #t)
-          (lambda (key . args) (usleep (* 10 1000)) #f)))
-      (iota 100))
-; start a new session
-    (catch #t
-      (lambda ()
-        (let* ((uri (format #f "~a/session" driver-uri))
-               (parameters (json (object ("capabilities" (object)))))
-               (response (request 'POST uri parameters))
-               (session-id (hash-ref response "sessionId")))
-          (list 'web-driver driver-pipe driver-uri session-id)))
-      (lambda (key . args)
-        (close-driver-pipe driver-pipe)
-        (apply throw key args)))))
+         (pipe (open-pipe* OPEN_WRITE "chromedriver" (format #f "--port=~a" port) "--silent"))
+         (uri (format #f "http://localhost:~a" port)))
+    (open* uri (lambda () (close-driver-pipe pipe)))))
+      
+(define *default-driver* (make-thread-local-fluid))
+
+(define-public open-web-driver
+  (lambda* (#:key url)
+    (define driver
+      (if url
+          (open* url (const #f))
+          (open-chromedriver)))
+    (if (not (fluid-ref *default-driver*))
+        (fluid-set! *default-driver* driver))
+    driver))
 
 (define-public (web-driver? object)
   (match object
-    (('web-driver driver-pipe driver-uri session-id) #t)
+    (('web-driver driver-uri session-id finalizer) #t)
     (else #f)))
 
 (define-public (web-driver-open? driver)
   (match driver
-    (('web-driver driver-pipe driver-uri session-id) (not (port-closed? driver-pipe)))))
+    (('web-driver driver-uri session-id finalizer)
+      (catch #t
+        (lambda () (request 'GET (format #f "~a/status" driver-uri) #f) #t)
+        (lambda (key . args) #f)))))
 
 (define (session-command driver method path body-scm)
   (match driver
-    (('web-driver driver-pipe driver-uri session-id)
+    (('web-driver driver-uri session-id finalizer)
       (request method (format #f "~a/session/~a~a" driver-uri session-id path) body-scm))))
-
-(define *default-driver* (make-thread-local-fluid))
 
 (define (close driver)
   (match driver
-    (('web-driver driver-pipe driver-uri session-id)
+    (('web-driver driver-uri session-id finalizer)
       (session-command driver 'DELETE "" #f)
-      (close-driver-pipe driver-pipe))))
+      (finalizer))))
 
 (define-public (close-web-driver . args)
-  (if (null? args)
-    (if (fluid-ref *default-driver*)
-      (begin
-        (close (fluid-ref *default-driver*))
-        (fluid-set! *default-driver* #f)))
-    (close (car args))))
+  (define driver (if (null? args) (fluid-ref *default-driver*) (car args)))
+  (if driver (close driver))
+  (if (equal? driver (fluid-ref *default-driver*))
+      (fluid-set! *default-driver* #f)))
 
 (define-public (call-with-web-driver proc)
   (define driver (open-web-driver))
@@ -123,9 +130,8 @@
       (close-web-driver driver) (apply throw args))))
 
 (define-public (get-default-driver)
-  (let ((current (fluid-ref *default-driver*)))
-    (if (or (not current) (not (web-driver-open? current)))
-      (fluid-set! *default-driver* (open-web-driver))))
+  (if (not (fluid-ref *default-driver*))
+      (fluid-set! *default-driver* (open-web-driver)))
   (fluid-ref *default-driver*))
 
 (define-syntax define-public-with-driver

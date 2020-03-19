@@ -1,7 +1,7 @@
+- appium, so i can test touch events finally
 - Complete all commands from specification
-- Remove executing 'sh', i do not really need it
 - Support for firefox
-- with-web-driver should accept arguments
+- with-web-driver should also accept arguments, or maybe just one, the driver?
 - test-web-handler method, that installs the web server and navigates to it
 - check if these bug are also present in the current chromedriver?
 - report the bug to chromedriver:
