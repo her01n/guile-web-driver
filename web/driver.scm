@@ -45,7 +45,22 @@
   (kill (hashq-ref port/pid-table pipe) SIGTERM)
   (close-pipe pipe))
 
-(define (open* driver-uri finalizer)
+(define (capabilities->parameters capabilities)
+  (define hash
+    (alist->hash-table
+      (map
+        (match-lambda
+          ((key value) `(,key . ,value))            
+          ((key . value) `(,key . ,value)))  
+        (or capabilities '()))))
+  (alist->hash-table
+    `(("capabilities" .
+      ,(alist->hash-table
+        `(("firstMatch" . (,(make-hash-table)))
+          ("alwaysMatch" . ,hash)
+          ("desiredMatch" . ,hash)))))))
+
+(define (open* driver-uri finalizer capabilities)
 ; wait until the new process starts listening
   (find
     (lambda (try)
@@ -57,7 +72,7 @@
   (catch #t
     (lambda ()
       (let* ((uri (format #f "~a/session" driver-uri))
-             (parameters (json (object ("capabilities" (object)))))
+             (parameters (capabilities->parameters capabilities))
              (response (request 'POST uri parameters))
              (session-id (hash-ref response "sessionId")))
         (list 'web-driver driver-uri session-id finalizer)))
@@ -73,20 +88,20 @@
     (close-port s)
     port))
 
-(define (open-chromedriver)
+(define (open-chromedriver capabilities)
   (let* ((port (free-listen-port))
          (pipe (open-pipe* OPEN_WRITE "chromedriver" (format #f "--port=~a" port) "--silent"))
          (uri (format #f "http://localhost:~a" port)))
-    (open* uri (lambda () (close-driver-pipe pipe)))))
+    (open* uri (lambda () (close-driver-pipe pipe)) capabilities)))
       
 (define *default-driver* (make-thread-local-fluid))
 
 (define-public open-web-driver
-  (lambda* (#:key url)
+  (lambda* (#:key url capabilities)
     (define driver
       (if url
-          (open* url (const #f))
-          (open-chromedriver)))
+          (open* url (const #f) capabilities)
+          (open-chromedriver capabilities)))
     (if (not (fluid-ref *default-driver*))
         (fluid-set! *default-driver* driver))
     driver))

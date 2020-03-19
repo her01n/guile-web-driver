@@ -27,7 +27,7 @@ Implicit session would be open on first call of such a procedure,
 so for most use cases it is not necessary to call *open-web-driver*,
 only to call *close-web-driver* without argument when done.
 
-- **open-web-driver [#:url url]**
+- **open-web-driver [#:url url] [#:capabilities capabilities]**
 
   With no arguments, launch chromedriver, connect to it, and start a web driver session.
   This opens an automated browser window.
@@ -37,6 +37,8 @@ only to call *close-web-driver* without argument when done.
   *url* should start with "http://".
 
   The new driver would become the default driver in case there is no default driver open yet.
+
+  Desired *capabilities* may be requested as an association list.
 
 - **web-driver? object**
 
