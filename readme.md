@@ -332,6 +332,20 @@ All values are integers.
   Returns empty list in case there is no such element.
   If from element is specified, consider only elements below this element.
 
+- **input-by-label-text [driver] text [#:from element]**
+
+  Finds an **\<input\>** element, that has related **\<label\>** element
+  with the specified *text*.
+  If there is no such element, throws an exception.
+  If from element is specified, consider only elements below this element.
+
+- **input-by-partial-label-text [driver] text [#:from element]**
+
+  Finds an **\<input\>** element, that has related **\<label\>** element
+  containing *text*.
+  If there is no such element, throws an exception.
+  If from element is specified, consider only elements below this element.
+
 - **active-element [driver]**
 
   Returns the current active element.
