@@ -1,7 +1,7 @@
 (define-module (web driver))
 
 (use-modules
-  (ice-9 hash-table) (ice-9 iconv) (ice-9 match) (ice-9 popen)
+  (ice-9 hash-table) (ice-9 iconv) (ice-9 match) (ice-9 popen) (ice-9 threads)
   (json)
   (srfi srfi-1) (srfi srfi-9) (srfi srfi-27)
   (web client) (web request) (web response) (web server))
