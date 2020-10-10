@@ -10,7 +10,7 @@ The client is still in very incomplete state, but allows for simple testing.
 - guile-json library from http://download.savannah.gnu.org/releases/guile-json/guile-json-0.3.1.tar.gz
 - chromedriver command and either chrome or chromium browser.
   Some distribution (arch) install chromedriver as part of chromium package, 
-  some others (debian) provide a separate package.
+  some others (debian) provide a separate package (chromium-driver).
 - Optionally for unit testing, hdt library is required from https://github.com/her01n/hdt
 
 ### Usage
