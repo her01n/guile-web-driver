@@ -312,6 +312,11 @@
     'web-driver-element driver 
     (hash-ref element-object "element-6066-11e4-a52e-4f735466cecf")))
 
+(define (element? value)
+  (match value
+    (('web-driver-element driver element) #t)
+    (_ #f)))
+
 (define (element-object? element-object)
   (and
     (hash-table? element-object)
@@ -443,8 +448,20 @@
 
 ;;; Interacting with elements
 
-(define-public (click element)
-  (element-command element 'POST "/click" (json (object))))
+(define (click-xpath text)
+  (format #f
+    "//a[normalize-space(text())=normalize-space(~s)] |
+     //button[normalize-space(text())=normalize-space(~s)] |
+     //input[(@type='button' or @type='submit' or @type='reset') and @value=~s] |
+     //input[@id = //label[normalize-space(text())=normalize-space(~s)]/@for] |
+     //label[normalize-space(text())=normalize-space(~s)]//input"
+    text text text text text))
+
+(define-public-with-driver (click driver target)
+  (define (execute-click element) (element-command element 'POST "/click" (json (object))))
+  (cond
+    ((element? target) (execute-click target))
+    ((string? target) (execute-click (element-by-xpath driver (click-xpath target))))))
 
 (define-public (clear element)
   (element-command element 'POST "/clear" (json (object))))

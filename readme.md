@@ -326,7 +326,7 @@ All values are integers.
   If there is no such element, throws an exception.
   If from element is specified, consider only elements below this element.
 
-- **element-by-xpath [driver] xpath [#:from element]**
+- **elements-by-xpath [driver] xpath [#:from element]**
 
   Finds all the the elements matching the XPath.
   Returns empty list in case there is no such element.
@@ -397,6 +397,28 @@ All values are integers.
 
   Simulates user clicking the element,
   For example *<a>* element or form control.
+
+- **click [driver] text**
+
+  If *text* is a string, find an element with the text and click it.
+  The element may be:
+
+  - An *anchor* with the given link text.
+
+        <a href="https://link.org">text</a>
+
+  - A *button* with the given text content.
+
+        <button>text</button>
+
+  - An *input* of type *button*, *submit* or *reset* with the text *value*.
+    
+        <input type="button" value="text" />
+
+  - Any *input* that have an associated *label* that contains the text.
+
+        <input type="checkbox" name="alpha" id="alpha" />
+        <label for="alpha">text</label>
 
 - **clear element**
 

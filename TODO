@@ -1,3 +1,5 @@
+- helper (text)
+- remove or rename input-by-label-text (element-by-label-text)
 - appium, so i can test touch events finally
 - Complete all commands from specification
 - Support for firefox

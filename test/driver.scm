@@ -344,6 +344,37 @@
     (navigate-to "http://localhost:8080")
     (click (element-by-id "one"))
     (assert (equal? "http://localhost:8080/one" (current-url))))
+  (test click-string
+    (test anchor
+      (set-web-handler! (const-html "<a href='/target.html'>anchor text</a>"))
+      (navigate-to "http://localhost:8080")
+      (click "anchor text")
+      (assert (equal? "http://localhost:8080/target.html" (current-url))))
+    (test button
+      (set-web-handler! (const-html "<form action='action'><button>button text</button></form>"))
+      (navigate-to "http://localhost:8080")
+      (click "button text")
+      (assert (string-prefix? "http://localhost:8080/action" (current-url))))
+    (test input-button
+      (set-web-handler!
+        (const-html "<form action='action'><input type='submit' value='button text' /></form>"))
+      (navigate-to "http://localhost:8080")
+      (click "button text")
+      (assert (string-prefix? "http://localhost:8080/action" (current-url))))
+    (test input-with-label-by-id
+      (set-web-handler!
+        (const-html
+          "<form><input type='checkbox' id='alpha' /><label for='alpha'>label text</label></form>"))
+      (navigate-to "http://localhost:8080")
+      (click "label text")
+      (assert (selected? (element-by-id "alpha"))))
+    (test input-with-label-nested
+      (set-web-handler!
+        (const-html
+          "<form><label><input type='checkbox' />label text</label></form>"))
+      (navigate-to "http://localhost:8080")
+      (click "label text")
+      (assert (selected? (element-by-tag-name "input")))))
   (test clear
     (set-web-handler! (const-html "<form><input name=in value=filled /></form>"))
     (navigate-to "http://localhost:8080")
