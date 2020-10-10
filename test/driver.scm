@@ -103,6 +103,7 @@
     (assert (equal? "the title" (title)))))
 
 (test windows
+  (set-web-handler! (const-html "test"))
   (test open-close-windows
     (assert (equal? 1 (length (all-windows))))
     (open-new-window)
@@ -133,11 +134,11 @@
     (open-new-window)
     (match-let (((one two) (all-windows)))
       (switch-to one)
-      (navigate-to "http://localhost:9753/")
+      (navigate-to "http://localhost:8080/one")
       (switch-to two)
-      (navigate-to "http://localhost:8642/")
+      (navigate-to "http://localhost:8080/two")
       (switch-to one)
-      (assert (equal? "http://localhost:9753/" (current-url))))))
+      (assert (equal? "http://localhost:8080/one" (current-url))))))
 
 (test browsing-context
   (set-web-handler!
@@ -470,63 +471,67 @@
 (test actions
   (set-web-handler! events-test-web-handler)
   (navigate-to "http://localhost:8080")
+  ; the events handler would also log mouse moves
+  ; "mouse move" event can creep in the log, 
+  ; it is enough if the mouse cursor os located above the automated chrome window
+  ; we use string-contains instead of equal? for comparing logs
   (test keys
     (test key-down-up
       (perform (key-down "KeyA") (key-up "KeyA"))
-      (assert (equal? "KeyA down, KeyA up," (text (element-by-id "log")))))
+      (assert (string-contains (text (element-by-id "log")) "KeyA down, KeyA up")))
     (test shift
       (perform (key-down "shift") (key-down "KeyA") (key-up "KeyA") (key-up "shift"))
       (assert 
-        (equal? 
-          "shift ShiftLeft down, shift KeyA down, shift KeyA up, ShiftLeft up,"
-          (text (element-by-id "log")))))
+        (string-contains
+          (text (element-by-id "log"))
+          "shift ShiftLeft down, shift KeyA down, shift KeyA up, ShiftLeft up")))
     (test control-character
       (perform (key-down "\uE00C") (key-up "\uE00C"))
-      (assert (equal? "Escape down, Escape up," (text (element-by-id "log")))))
+      (assert (string-contains (text (element-by-id "log")) "Escape down, Escape up")))
     (test single-character
       (perform (key-down "b") (key-up "b"))
-      (assert (equal? "KeyB down, KeyB up," (text (element-by-id "log")))))
+      (assert (string-contains (text (element-by-id "log")) "KeyB down, KeyB up,")))
     (test separate-calls
       (perform (key-down "c"))
       (perform (key-up "c"))
-      (assert (equal? "KeyC down, KeyC up," (text (element-by-id "log"))))))
+      (assert (string-contains (text (element-by-id "log")) "KeyC down, KeyC up,"))))
   (test mouse
     (test dragndrop
       (perform (mouse-move 10 20) (mouse-down #:left) (mouse-move 30 40) (mouse-up #:left))
       (assert
-        (equal?
-          "mouse move (10, 20), mouse 0 down (10, 20), mouse move (30, 40), mouse 0 up (30, 40),"
-          (text (element-by-id "log")))))
+        (string-contains
+          (text (element-by-id "log"))
+          "mouse move (10, 20), mouse 0 down (10, 20), mouse move (30, 40), mouse 0 up (30, 40),")))
     (test right-click
       (perform (mouse-move 50 60) (mouse-down #:right) (mouse-up #:right))
       (assert
-        (equal?
-          "mouse move (50, 60), mouse 2 down (50, 60), mouse 2 up (50, 60),"
-          (text (element-by-id "log")))))
+        (string-contains
+          (text (element-by-id "log"))
+          "mouse move (50, 60), mouse 2 down (50, 60), mouse 2 up (50, 60),")))
     (test separate-calls
       (perform (mouse-move 70 80))
       (perform (mouse-down #:left) (mouse-up #:left))
       (assert
-        (equal?
-          "mouse move (70, 80), mouse 0 down (70, 80), mouse 0 up (70, 80),"
-          (text (element-by-id "log"))))))
+        (string-contains
+          (text (element-by-id "log"))
+          "mouse move (70, 80), mouse 0 down (70, 80), mouse 0 up (70, 80),"))))
   (test key-mouse
     (test mask
       (perform
         (key-down "ShiftLeft") (mouse-move 70 80) (mouse-down #:left) (mouse-up #:left)
         (key-up "ShiftLeft"))
       (assert
-        (equal?
-          "shift ShiftLeft down, shift mouse move (70, 80), shift mouse 0 down (70, 80), shift mouse 0 up (70, 80), ShiftLeft up,"
-          (text (element-by-id "log")))))
+        (string-contains
+          (text (element-by-id "log"))
+          "shift ShiftLeft down, shift mouse move (70, 80), shift mouse 0 down (70, 80), shift mouse 0 up (70, 80), ShiftLeft up,")))
     (test order
       (perform 
         (mouse-move 90 100) (mouse-down #:left) (key-down "KeyC") (key-up "KeyC")
         (mouse-up #:left))
       (assert
-        (equal?
-          "mouse move (90, 100), mouse 0 down (90, 100), KeyC down, KeyC up, mouse 0 up (90, 100),"
-          (text (element-by-id "log"))))))
+        (string-contains
+          (text (element-by-id "log"))
+          "mouse move (90, 100), mouse 0 down (90, 100), KeyC down, KeyC up, mouse 0 up (90, 100),"))))
   ; TODO chromedriver has bug with the wait, test on firefox
   ;(test wait
   ;  (perform (key-down "[") (wait 100) (key-up "["))
@@ -542,17 +547,17 @@
     (test key-mouse
       (perform (mouse-move 10 10) (mouse-down #:left) (key-down "x") (release-all))
       (assert
-        (equal?
-          "mouse move (10, 10), mouse 0 down (10, 10), KeyX down, KeyX up, mouse 0 up (10, 10),"
-          (text (element-by-id "log")))))
+        (string-contains
+          (text (element-by-id "log"))
+          "mouse move (10, 10), mouse 0 down (10, 10), KeyX down, KeyX up, mouse 0 up (10, 10),")))
     (test separate-call
       (perform (mouse-move 10 10) (mouse-down #:left))
       (perform (key-down "q"))
       (perform (release-all))
       (assert
-        (equal?
-          "mouse move (10, 10), mouse 0 down (10, 10), KeyQ down, KeyQ up, mouse 0 up (10, 10),"
-          (text (element-by-id "log")))))))
+        (string-contains
+          (text (element-by-id "log"))
+          "mouse move (10, 10), mouse 0 down (10, 10), KeyQ down, KeyQ up, mouse 0 up (10, 10),")))))
 
 #!
 (test seo
