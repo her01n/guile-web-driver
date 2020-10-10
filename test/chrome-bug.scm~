@@ -1,0 +1,36 @@
+(define-module (test chrome-bug))
+
+(use-modules
+  (hdt hdt)
+  (ice-9 match)
+  (web driver) (web uri) (web request))
+
+(test chrome-bug
+  (set-web-handler!
+    (lambda (request body)
+      (match (uri-path (request-uri request))
+        ("/a.html"
+         (values
+           '((content-type . (text/html)))
+           "<html>
+              <head><link rel=stylesheet type='text/css' href='/style.css'></head>
+              <body><a href='/b.html'>b</a></body>
+            </html>"))
+        ("/b.html"
+         (values
+           '((content-type . (text/html)))
+           "<html>
+              <head><link rel='stylesheet' type='text/css' href='/style.css'></head>
+              <body><a href='/a.html'>a</a></body>
+            </html>"))
+; this works
+;        ("/style.css" (values '((content-type . (text/css)) (cache-control . ((max-age . 300)))) ""))
+        ("/style.css" (values '((content-type . (text/css))) "body { color: red; }"))
+        (else (values '() "not found")))))
+  (navigate-to "http://localhost:8080/a.html")
+  (click (element-by-link-text "b"))
+  (click (element-by-link-text "a"))
+  (click (element-by-link-text "b"))
+  (click (element-by-link-text "a"))
+  (assert (equal? "http://localhost:8080/a.html" (current-url))))
+
