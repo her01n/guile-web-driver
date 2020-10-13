@@ -433,8 +433,8 @@
 (define-public (css-value element name)
   (element-command element 'GET (format #f "/css/~a" name) #f))
 
-(define-public (text element)
-  (element-command element 'GET "/text" #f))
+(define-public-with-driver (text driver #:optional element)
+  (element-command (or element (element-by-tag-name "body")) 'GET "/text" #f))
 
 (define-public (tag-name element)
   (element-command element 'GET "/name" #f))

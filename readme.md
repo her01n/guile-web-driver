@@ -377,6 +377,10 @@ All values are integers.
 
   Gets the text content of the element.
 
+- **text [driver]**
+
+  Without an element argument, get the text of the whole page.
+
 - **tag name element**
 
   Returns the tag name of the element.

@@ -304,7 +304,8 @@
   (test text
     (set-web-handler! (const-html "<html><body>outer <div id='theid'>text</div></body></html>"))
     (navigate-to "http://localhost:8080")
-    (assert (equal? "text" (text (element-by-id "theid")))))
+    (assert (equal? "text" (text (element-by-id "theid"))))
+    (assert (equal? "outer\ntext" (text))))
   (test tag
     (set-web-handler! (const-html "<div>content</div>"))
     (navigate-to "http://localhost:8080")
