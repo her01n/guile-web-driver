@@ -41,6 +41,16 @@
   (hook (close-web-driver driver))
   (navigate-to driver "http://localhost:8080")
   (assert (equal? "http://localhost:8080/" (current-url driver))))
+
+(test open-geckodriver
+  (define driver (open-web-driver #:browser 'firefox))
+  (assert driver)
+  (close-web-driver driver))
+
+(test open-headless-firefox
+  (define driver (open-web-driver #:browser 'headless-firefox))
+  (assert driver)
+  (close-web-driver driver))
   
 ; Use only one driver, default, to speed up the tests
 (hook (close-web-driver))

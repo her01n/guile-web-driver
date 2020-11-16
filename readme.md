@@ -27,14 +27,26 @@ Implicit session would be open on first call of such a procedure,
 so for most use cases it is not necessary to call *open-web-driver*,
 only to call *close-web-driver* without argument when done.
 
-- **open-web-driver [#:url url] [#:capabilities capabilities]**
+- **open-web-driver [#:browser 'browser] [#:url url] [#:capabilities capabilities]**
 
-  With no arguments, launch chromedriver, connect to it, and start a web driver session.
-  This opens an automated browser window.
+  Start a new web driver session.
+
+  *browser* argument should be a symbol, one of the following:
+
+  - 'chrome, 'chromium or 'chromedriver
+    Launch *chromedriver* command, open a chrome or chromium browser.
+    The command should be in *PATH*. This is the default.
+  - 'firefox or 'geckodriver
+    Launch *geckodriver* command, open a firefox browser.
+    The command should be in *PATH*.
+  - 'headless-firefox
+    Launch *geckodriver* command and open headless firefox.
+    This should work in the same way as firefox, but does not require a window system.
 
   If url argument is given, connect to remote webdriver server at the url,
   and start a new web driver session there.
   *url* should start with "http://".
+  *browser* must not be specified.
 
   The new driver would become the default driver in case there is no default driver open yet.
 

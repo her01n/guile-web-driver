@@ -1,8 +1,8 @@
-- helper (text)
+- add (selected? text) helper
+- add (send-keys text), (click text) helpers
 - remove or rename input-by-label-text (element-by-label-text)
 - appium, so i can test touch events finally
 - Complete all commands from specification
-- Support for firefox
 - with-web-driver should also accept arguments, or maybe just one, the driver?
 - test-web-handler method, that installs the web server and navigates to it
 - check if these bug are also present in the current chromedriver?

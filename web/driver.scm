@@ -88,20 +88,47 @@
     (close-port s)
     port))
 
-(define (open-chromedriver capabilities)
+(define (launch-and-open command args capabilities)
   (let* ((port (free-listen-port))
-         (pipe (open-pipe* OPEN_WRITE "chromedriver" (format #f "--port=~a" port) "--silent"))
+         (pipe (apply open-pipe* OPEN_WRITE command (format #f "--port=~a" port) args))
          (uri (format #f "http://localhost:~a" port)))
     (open* uri (lambda () (close-driver-pipe pipe)) capabilities)))
-      
+
+(define (open-chromedriver capabilities)
+  (launch-and-open "chromedriver" '("--silent") capabilities))
+
+(define (open-geckodriver capabilities)
+  (launch-and-open "geckodriver" '("--log" "fatal") capabilities))
+
+(set! *random-state* (random-state-from-platform))
+
+; XXX this is ugly, but works best
+; geckodriver should have --headless option really
+(define (open-headless-firefox capabilities)
+  (define binary (format #f "/tmp/headless-firefox-~a" (random 10000000)))
+  (with-output-to-file binary
+    (lambda ()
+      (format #t "#!/bin/sh\n")
+      (format #t "firefox --headless $@")))
+  (chmod binary #o755)
+  (let ((driver (launch-and-open "geckodriver" (list "--log" "fatal" "--binary" binary) capabilities)))
+    (delete-file binary)
+    driver))
+
 (define *default-driver* (make-thread-local-fluid))
 
 (define-public open-web-driver
-  (lambda* (#:key url capabilities)
+  (lambda* (#:key browser url capabilities)
     (define driver
-      (if url
-          (open* url (const #f) capabilities)
-          (open-chromedriver capabilities)))
+      (match (list browser url)
+        ((#f (? identity url)) (open* url (const #f) capabilities))
+        (((or #f 'chrome 'chromium 'geckodriver) #f) (open-chromedriver capabilities))
+        (((or 'firefox 'geckodriver) #f) (open-geckodriver capabilities))
+        (('headless-firefox #f) (open-headless-firefox capabilities))
+        (((? identity browser) (? identity url))
+         (throw 'invalid-arguments "Only one of #:browser and #:url may be specified"))
+        ((browser #f)
+         (throw 'unknown-browser (format #f "The browser ~a is not supported." browser)))))
     (if (not (fluid-ref *default-driver*))
         (fluid-set! *default-driver* driver))
     driver))
