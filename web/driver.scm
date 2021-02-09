@@ -493,8 +493,13 @@
 (define-public (clear element)
   (element-command element 'POST "/clear" (json (object))))
 
-(define-public (send-keys element text)
-  (element-command element 'POST "/value" (json (object ("text" ,text)))))
+(define-public-with-driver (send-keys driver target text)
+  (element-command
+    (cond
+      ((element? target) target)
+      ((string? target) (element-by-label-text driver target))
+      (else (throw 'illegal-argument "target of send-keys must be either element or string: ~a" target)))
+    'POST "/value" (json (object ("text" ,text)))))
 
 ;;; Document
 

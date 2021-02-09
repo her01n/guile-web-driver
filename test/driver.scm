@@ -395,13 +395,19 @@
     (set-web-handler!
       (const-html
         "<html><body><form method='get' action='submit'>
+           <label for='text'>label text</label>
            <input id='text' type='text' name='text' />
            <input id='submit' type='submit'/>
          </form></body></html>"))
     (navigate-to "http://localhost:8080")
-    (send-keys (element-by-id "text") "keys")
-    (click (element-by-id "submit"))
-    (assert (equal? "http://localhost:8080/submit?text=keys" (current-url)))))
+    (test element
+      (send-keys (element-by-id "text") "keys")
+      (click (element-by-id "submit"))
+      (assert (equal? "http://localhost:8080/submit?text=keys" (current-url))))
+    (test label
+      (send-keys "label text" "keys")
+      (click (element-by-id "submit"))
+      (assert (equal? "http://localhost:8080/submit?text=keys" (current-url))))))
 
 (test document
   (test page-source

@@ -445,6 +445,11 @@ All values are integers.
 
   Simulates user typing the text with the focus on the element.
 
+- **send-keys [driver] label text**
+
+  Find a label with the text content equal *label*.
+  Simulates use typing the text into the associated input.
+
 ### Document
 
 - **page-source [driver]**

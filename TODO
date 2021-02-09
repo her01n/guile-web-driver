@@ -1,4 +1,3 @@
-- add (send-keys label keys) helper
 - add (selected? text) helper
 - appium, so i can test touch events finally
 - Complete all commands from specification
