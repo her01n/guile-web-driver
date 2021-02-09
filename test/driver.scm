@@ -266,23 +266,23 @@
     (assert (element-by-tag-name "p" #:from (element-by-class-name "full")))
     (assert 
       (throws-exception (element-by-tag-name "p" #:from (element-by-class-name "empty")))))
-  (test input-by-label-text
+  (test element-by-label-text
     (test by-id
       (set-web-handler!
         (const-html
           "<form><label for=iid>label text</label><input id=iid type=text /></form>"))
       (navigate-to "http://localhost:8080")
-      (define input (input-by-label-text "label text"))
+      (define input (element-by-label-text "label text"))
       (assert input)
       (assert (equal? "text" (attribute input "type")))
       (test partial
-        (assert (equal? input (input-by-partial-label-text "label")))))
+        (assert (equal? input (element-by-partial-label-text "label")))))
     (test nested
       (set-web-handler!
         (const-html
           "<form><label><input type=checkbox />label text</label></form>"))
       (navigate-to "http://localhost:8080")
-      (define input (input-by-label-text "label text"))
+      (define input (element-by-label-text "label text"))
       (assert input)
       (assert (equal? "checkbox" (attribute input "type"))))))
 

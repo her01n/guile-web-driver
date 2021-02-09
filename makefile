@@ -1,19 +1,20 @@
 default: .tested
 
+GUILE ?= guile
+
 .tested: web/*.scm test/*.scm
 	hdt
 	touch $@
 
 clean:
 	rm -rf .tested
-	
-GUILE_CONFIG ?= guile-config
-SITE_DIR ?= $(shell $(GUILE_CONFIG) info sitedir)
+
+GUILE_SITE_DIR ?= $(shell $(GUILE) -c "(display (%site-dir)) (newline)")
 
 install:
-	install -D -t $(SITE_DIR)/web web/driver.scm
-	install -D -t $(SITE_DIR)/web/driver web/driver/*
+	install -D --target-directory=$(GUILE_SITE_DIR)/web web/*.scm
+	install -D --target-directory=$(GUILE_SITE_DIR)/web/driver web/driver/*.scm
 
 uninstall:
-	rm -rf $(SITE_DIR)/web/driver
-	rm -rf $(SITE_DIR)/web/driver.scm
+	rm -rf $(GUILE_SITE_DIR)/web/driver
+	rm -rf $(GUILE_SITE_DIR)/web/driver.scm

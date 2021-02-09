@@ -425,7 +425,7 @@
           (throw 'input-not-found "<input> for label '~a' not found." (list label))
           (first children))))
 
-(define-public-with-driver (input-by-label-text driver text' #:key from)
+(define-public-with-driver (element-by-label-text driver text' #:key from)
   (define label
     (find
       (lambda (label) (equal? text' (text label)))
@@ -434,7 +434,7 @@
       (throw 'label-not-found "<label> with text '~a' not found." (list text')))
   (input-for-label label))
 
-(define-public-with-driver (input-by-partial-label-text driver text' #:key from)
+(define-public-with-driver (element-by-partial-label-text driver text' #:key from)
   (define label
     (find
       (lambda (label) (string-contains (text label) text'))
