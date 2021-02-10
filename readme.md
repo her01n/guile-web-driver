@@ -445,10 +445,19 @@ All values are integers.
 
   Simulates user typing the text with the focus on the element.
 
+  The procedure could be used to choose a file for *input* of type *file*.
+  *text* should be an absolute path to the selected file.
+  See also *choose-file*.
+
 - **send-keys [driver] label text**
 
   Find a label with the text content equal *label*.
   Simulates use typing the text into the associated input.
+
+- **choose-file element path**
+
+  Choose a file for *input* of type *file*.
+  **path** may be relative or absolute, the file should exist.
 
 ### Document
 

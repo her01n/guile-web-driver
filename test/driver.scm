@@ -409,6 +409,30 @@
       (click (element-by-id "submit"))
       (assert (equal? "http://localhost:8080/submit?text=keys" (current-url))))))
 
+(define (test-file-choosen)
+  (equal?
+    "test\n"
+    (execute-javascript "return document.getElementById('file').files[0].text()")))
+
+(test choose-file
+  (set-web-handler!
+    (const-html
+      "<html>
+         <body>
+           <form method='post' enctype='multipart/form-data'>
+             <label for='file'>file label</label>
+             <input id='file' name='file' type='file' />
+           </form>
+         </body>
+       </html>"))
+  (navigate-to "http://localhost:8080")
+  (test element
+    (choose-file (element-by-id "file") "test/test.txt")
+    (assert (test-file-choosen)))
+  (test label
+    (choose-file "file label" "test/test.txt")
+    (assert (test-file-choosen))))
+
 (test document
   (test page-source
     (set-web-handler! (const-html "<html><head></head><body>hello</body></html>"))

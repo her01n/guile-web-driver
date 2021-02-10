@@ -501,6 +501,9 @@
       (else (throw 'illegal-argument "target of send-keys must be either element or string: ~a" target)))
     'POST "/value" (json (object ("text" ,text)))))
 
+(define-public-with-driver (choose-file driver target path)
+  (send-keys driver target (canonicalize-path path)))
+
 ;;; Document
 
 (define-public-with-driver (page-source driver)
