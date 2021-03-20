@@ -416,32 +416,25 @@
 
 (define-finder element-by-xpath elements-by-xpath "xpath")
 
-(define (input-for-label label)
-  (define id (attribute label "for"))
-  (define children (elements-by-tag-name "input" #:from label))
-  (if id
-      (element-by-id id)
-      (if (null? children)
-          (throw 'input-not-found "<input> for label '~a' not found." (list label))
-          (first children))))
+(define-public-with-driver (element-by-label-text driver text #:key from)
+  (element-by-xpath driver
+    (format #f
+      "//input[@id = //label[normalize-space(text())=normalize-space(~s)]/@for] |
+       //textarea[@id = //label[normalize-space(text())=normalize-space(~s)]/@for] |
+       //label[normalize-space(text())=normalize-space(~s)]//input |
+       //label[normalize-space(text())=normalize-space(~s)]//textarea"
+      text text text text)
+    #:from from))
 
-(define-public-with-driver (element-by-label-text driver text' #:key from)
-  (define label
-    (find
-      (lambda (label) (equal? text' (text label)))
-      (elements-by-tag-name "label" #:from from)))
-  (if (not label)
-      (throw 'label-not-found "<label> with text '~a' not found." (list text')))
-  (input-for-label label))
-
-(define-public-with-driver (element-by-partial-label-text driver text' #:key from)
-  (define label
-    (find
-      (lambda (label) (string-contains (text label) text'))
-      (elements-by-tag-name "label" #:from from)))
-  (if (not label)
-      (throw 'label-not-found "<label> with partial text '~a' not found." (list text')))
-  (input-for-label label))
+(define-public-with-driver (element-by-partial-label-text driver text #:key from)
+  (element-by-xpath driver
+    (format #f
+      "//input[@id = //label[contains(normalize-space(text()), normalize-space(~s))]/@for] |
+       //textarea[@id = //label[contains(normalize-space(text()), normalize-space(~s))]/@for] |
+       //label[contains(normalize-space(text()), normalize-space(~s))]//input |
+       //label[contains(normalize-space(text()), normalize-space(~s))]//textarea"
+      text text text text)
+    #:from from))
 
 (define-public-with-driver (active-element driver)
   (web-driver-element driver (session-command driver 'GET "/element/active" #f)))

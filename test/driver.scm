@@ -409,6 +409,19 @@
       (click (element-by-id "submit"))
       (assert (equal? "http://localhost:8080/submit?text=keys" (current-url))))))
 
+(test send-keys-to-textarea
+  (set-web-handler!
+    (const-html
+      "<html><body><form method='get' action='submit'>
+         <label for='area'>label text</label>
+         <textarea id='area' name='text'></textarea>
+         <button>submit</button>
+       </form></body></html>"))
+  (navigate-to "http://localhost:8080")
+  (send-keys "label text" "keys")
+  (click "submit")
+  (assert (equal? "http://localhost:8080/submit?text=keys" (current-url))))
+
 (define (test-file-choosen)
   (equal?
     "test\n"
