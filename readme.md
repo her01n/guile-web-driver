@@ -2,15 +2,21 @@
 
 This is a web-driver, or selenium 2, client.
 It's purpose is to automate browsers, specifically for automatic web server testing.
+Chrome or Firefox can be used as a browsers,
+or it can connect to arbitrary server providing webdriver interface.
 Right now only chromedriver running chrome or chromium is supported as a server.
-The client is still in very incomplete state, but allows for simple testing.
+The client implements most of the webdriver [specification](https://www.w3.org/TR/webdriver2/).
 
 ### Requirements
 
+- guile version 2.2
 - guile-json library from http://download.savannah.gnu.org/releases/guile-json/guile-json-0.3.1.tar.gz
-- chromedriver command and either chrome or chromium browser.
+- Optional chromedriver command and either chrome or chromium browser.
   Some distribution (arch) install chromedriver as part of chromium package, 
   some others (debian) provide a separate package (chromium-driver).
+  Required for unit tests.
+- Optional [geckodriver](https://github.com/mozilla/geckodriver/) and mozilla firefox browser.
+  Required for unit tests.
 - Optionally for unit testing, hdt library is required from https://github.com/her01n/hdt
 
 ### Usage
@@ -51,7 +57,7 @@ only to call *close-web-driver* without argument when done.
   The new driver would become the default driver in case there is no default driver open yet.
 
   Desired *capabilities* may be requested.
-  The capabilities are submitted in "desiredMatch" or "alwaysMatch" properties.
+  The capabilities are submitted in "alwaysMatch" property.
   *capabilities* parameter should be an association list or a hash-table.
   To pass an object as a value, it must be specified as a hash-table.
   For example:

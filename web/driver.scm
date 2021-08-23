@@ -52,13 +52,11 @@
     ((? list? alist) (alist->hash-table alist))))
 
 (define (capabilities->parameters capabilities)
-  (define hash (to-hash-table capabilities))
   (alist->hash-table
     `(("capabilities" .
       ,(alist->hash-table
         `(("firstMatch" . (,(make-hash-table)))
-          ("alwaysMatch" . ,hash)
-          ("desiredMatch" . ,hash)))))))
+          ("alwaysMatch" . ,(to-hash-table capabilities))))))))
 
 (define (open* driver-uri finalizer capabilities)
 ; wait until the new process starts listening
@@ -102,18 +100,13 @@
 
 (set! *random-state* (random-state-from-platform))
 
-; XXX this is ugly, but works best
-; geckodriver should have --headless option really
-(define (open-headless-firefox capabilities)
-  (define binary (format #f "/tmp/headless-firefox-~a" (random 10000000)))
-  (with-output-to-file binary
-    (lambda ()
-      (format #t "#!/bin/sh\n")
-      (format #t "firefox --headless $@")))
-  (chmod binary #o755)
-  (let ((driver (launch-and-open "geckodriver" (list "--log" "fatal" "--binary" binary) capabilities)))
-    (delete-file binary)
-    driver))
+(define (add-firefox-headless capabilities)
+  (define hash-table (to-hash-table capabilities))
+  (define firefox-options (hash-ref hash-table "moz:firefoxOptions" (make-hash-table)))
+  (define args (hash-ref firefox-options "args" '()))
+  (hash-set! firefox-options "args" (append args '("-headless")))
+  (hash-set! hash-table "moz:firefoxOptions" firefox-options)
+  hash-table)
 
 (define *default-driver* (make-thread-local-fluid))
 
@@ -124,7 +117,7 @@
         ((#f (? identity url)) (open* url (const #f) capabilities))
         (((or #f 'chrome 'chromium 'chromedriver) #f) (open-chromedriver capabilities))
         (((or 'firefox 'geckodriver) #f) (open-geckodriver capabilities))
-        (('headless-firefox #f) (open-headless-firefox capabilities))
+        (('headless-firefox #f) (open-geckodriver (add-firefox-headless capabilities)))
         (((? identity browser) (? identity url))
          (throw 'invalid-arguments "Only one of #:browser and #:url may be specified"))
         ((browser #f)
