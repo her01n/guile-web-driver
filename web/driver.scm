@@ -122,7 +122,7 @@
     (define driver
       (match (list browser url)
         ((#f (? identity url)) (open* url (const #f) capabilities))
-        (((or #f 'chrome 'chromium 'geckodriver) #f) (open-chromedriver capabilities))
+        (((or #f 'chrome 'chromium 'chromedriver) #f) (open-chromedriver capabilities))
         (((or 'firefox 'geckodriver) #f) (open-geckodriver capabilities))
         (('headless-firefox #f) (open-headless-firefox capabilities))
         (((? identity browser) (? identity url))
