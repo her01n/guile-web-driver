@@ -47,6 +47,10 @@
   (assert driver)
   (close-web-driver driver))
 
+(test headless
+  (hook (close-web-driver))
+  (assert (open-web-driver #:browser 'firefox #:headless #t)))
+
 (test open-headless-firefox
   (define driver (open-web-driver #:browser 'headless-firefox))
   (assert driver)

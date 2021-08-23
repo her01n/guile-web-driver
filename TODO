@@ -1,5 +1,3 @@
-- refactor open-web-driver to accept #:headless option?
-
 - add (selected? text) helper
 - appium, so i can test touch events finally
 - Complete all commands from specification

@@ -33,7 +33,7 @@ Implicit session would be open on first call of such a procedure,
 so for most use cases it is not necessary to call *open-web-driver*,
 only to call *close-web-driver* without argument when done.
 
-- **open-web-driver [#:browser 'browser] [#:url url] [#:capabilities capabilities]**
+- **open-web-driver [#:browser 'browser] [#:url url] [#:headless #t] [#:capabilities capabilities]**
 
   Start a new web driver session.
 
@@ -47,14 +47,16 @@ only to call *close-web-driver* without argument when done.
     The command should be in *PATH*.
   - 'headless-firefox
     Launch *geckodriver* command and open headless firefox.
-    This should work in the same way as firefox, but does not require a window system.
+    Deprecated, use *#:browser firefox #:headless #t*.
 
   If url argument is given, connect to remote webdriver server at the url,
   and start a new web driver session there.
   *url* should start with "http://".
   *browser* must not be specified.
 
-  The new driver would become the default driver in case there is no default driver open yet.
+  With *#:headless* option set to *#t*, opens the browser in headless mode.
+  The page and user interface is not visible, but does not require a window system.
+  This only works with geckodriver.
 
   Desired *capabilities* may be requested.
   The capabilities are submitted in "alwaysMatch" property.
@@ -71,6 +73,8 @@ only to call *close-web-driver* without argument when done.
   ```
 
   The caller may use *json* macro from *(json)* package to build the hash tables conveniently.
+
+  The new driver would become the default driver in case there is no default driver open yet.
 
 - **web-driver? object**
 
