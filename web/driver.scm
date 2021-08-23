@@ -45,14 +45,14 @@
   (kill (hashq-ref port/pid-table pipe) SIGTERM)
   (close-pipe pipe))
 
+(define (to-hash-table value)
+  (match value
+    ((? hash-table? table) table)
+    (#f (make-hash-table))
+    ((? list? alist) (alist->hash-table alist))))
+
 (define (capabilities->parameters capabilities)
-  (define hash
-    (alist->hash-table
-      (map
-        (match-lambda
-          ((key value) `(,key . ,value))            
-          ((key . value) `(,key . ,value)))  
-        (or capabilities '()))))
+  (define hash (to-hash-table capabilities))
   (alist->hash-table
     `(("capabilities" .
       ,(alist->hash-table

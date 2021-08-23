@@ -50,7 +50,21 @@ only to call *close-web-driver* without argument when done.
 
   The new driver would become the default driver in case there is no default driver open yet.
 
-  Desired *capabilities* may be requested as an association list.
+  Desired *capabilities* may be requested.
+  The capabilities are submitted in "desiredMatch" or "alwaysMatch" properties.
+  *capabilities* parameter should be an association list or a hash-table.
+  To pass an object as a value, it must be specified as a hash-table.
+  For example:
+
+  ```
+  (open-web-driver
+    #:browser 'geckodriver
+    #:capabilities
+      `(("browserName" . "firefox")
+        ("moz:firefoxOptions" . ,(alist->hash-table `(("args" . ("-headless")))))))
+  ```
+
+  The caller may use *json* macro from *(json)* package to build the hash tables conveniently.
 
 - **web-driver? object**
 

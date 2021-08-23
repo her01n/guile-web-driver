@@ -1,7 +1,7 @@
 (define-module (test driver))
 
 (use-modules
-  (ice-9 iconv) (ice-9 match) (ice-9 popen) (ice-9 textual-ports) (ice-9 threads)
+  (ice-9 hash-table) (ice-9 iconv) (ice-9 match) (ice-9 popen) (ice-9 textual-ports) (ice-9 threads)
   (hdt hdt)
   (srfi srfi-1)
   (web client) (web request) (web response) (web server) (web uri))
@@ -51,7 +51,17 @@
   (define driver (open-web-driver #:browser 'headless-firefox))
   (assert driver)
   (close-web-driver driver))
-  
+
+(test capabilities
+  (hook (close-web-driver))
+  (test alist
+    (assert (open-web-driver #:browser 'geckodriver #:capabilities '(("browserName" . "firefox")))))
+  (test hash-table
+    (assert
+      (open-web-driver
+         #:browser 'geckodriver
+         #:capabilities (alist->hash-table '(("browserName" . "firefox")))))))
+
 ; Use only one driver, default, to speed up the tests
 (hook (close-web-driver))
 

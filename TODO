@@ -1,3 +1,7 @@
+- maybe i should send the capabilities in "alwaysMatch" only?
+- 'headless-firefox: use capabilities instead of the executable hack
+- refactor open-web-driver to accept #:headless option?
+
 - add (selected? text) helper
 - appium, so i can test touch events finally
 - Complete all commands from specification
