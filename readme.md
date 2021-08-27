@@ -2,9 +2,8 @@
 
 This is a web-driver, or selenium 2, client.
 It's purpose is to automate browsers, specifically for automatic web server testing.
-Chrome or Firefox can be used as a browsers,
+Chrome or Firefox can be used as the automated browsers,
 or it can connect to arbitrary server providing webdriver interface.
-Right now only chromedriver running chrome or chromium is supported as a server.
 The client implements most of the webdriver [specification](https://www.w3.org/TR/webdriver2/).
 
 ### Requirements
