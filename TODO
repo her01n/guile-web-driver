@@ -1,3 +1,4 @@
+- extract api reference from readme, add a quick start to the readme
 - add (selected? text) helper
 - appium, so i can test touch events finally
 - Complete all commands from specification

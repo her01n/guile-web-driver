@@ -416,7 +416,7 @@ All values are integers.
 
   Without an element argument, get the text of the whole page.
 
-- **tag name element**
+- **tag-name element**
 
   Returns the tag name of the element.
 
@@ -640,7 +640,7 @@ See [Element Interaction](#element-interaction) for higher level interface.
   **time** is given in milliseconds.
 
   ```scheme
-  (perform (key-down "KeyA" (wait 20) (key-up "KeyA")))
+  (perform (key-down "KeyA") (wait 20) (key-up "KeyA")))
   ```
 
   is roughly equivalent to 

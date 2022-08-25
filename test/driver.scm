@@ -214,13 +214,13 @@
   (test maximize
     (maximize)
     (let ((rect (window-rect)))
-      (assert (equal? (0 (rect-x rect))))
+      (assert (equal? 0 (rect-x rect)))
       (assert (>= (rect-width rect) 1280))))
   (test full-screen
     (full-screen)
     (let ((rect (window-rect)))
-      (assert (equal? (0 (rect-x rect))))
-      (assert (equal? (0 (rect-y rect))))
+      (assert (equal? 0 (rect-x rect)))
+      (assert (equal? 0 (rect-y rect)))
       (assert (>= (rect-width rect) 1280))))
   (test restore
     (set-window-position 20 30)
