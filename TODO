@@ -27,5 +27,6 @@ Connection: close
 
 The pause between the keyDown and the keyUp event takes double the time, 200 milliseconds.
 
+- potential bug: can *attribute* or *property* return an element, or an object?
 - wish: get-line should accept no argument to read from current input port
-
+- wish: map should accept vector in place of a list

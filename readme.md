@@ -9,7 +9,7 @@ The client implements most of the webdriver [specification](https://www.w3.org/T
 ### Requirements
 
 - guile version 2.2
-- guile-json library from http://download.savannah.gnu.org/releases/guile-json/guile-json-0.3.1.tar.gz
+- guile-json library from http://download.savannah.gnu.org/releases/guile-json/guile-json-4.7.3.tar.gz
 - Optional chromedriver command and either chrome or chromium browser.
   Some distribution (arch) install chromedriver as part of chromium package, 
   some others (debian) provide a separate package (chromium-driver).

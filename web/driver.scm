@@ -32,11 +32,11 @@
     (lambda ()
       (http-request uri #:method method #:body body-bytevector))
     (lambda (response body)
-      (let ((value (hash-ref (json-string->scm (bytevector->string body "utf-8")) "value")))
+      (let ((value (assoc-ref (json-string->scm (bytevector->string body "utf-8")) "value")))
         (if (equal? 200 (response-code response))
           value
-          (let ((error (hash-ref value "error"))
-                (message (hash-ref value "message")))
+          (let ((error (assoc-ref value "error"))
+                (message (assoc-ref value "message")))
             (throw 'web-driver-error
               (format #f "Request ~a ~a failed with status ~a ~a.\nError: ~a\nMessage: ~a\n" 
                 method uri (response-code response) (response-reason-phrase response) error message))))))))
@@ -45,18 +45,19 @@
   (kill (hashq-ref port/pid-table pipe) SIGTERM)
   (close-pipe pipe))
 
-(define (to-hash-table value)
-  (match value
-    ((? hash-table? table) table)
-    (#f (make-hash-table))
-    ((? list? alist) (alist->hash-table alist))))
+(define (hash-table->alist hash)
+  (hash-fold (lambda (key value alist) (cons (cons key value) alist)) (list) hash))
+
+(define (to-assoc-list scm)
+  (match scm
+    ((? list? list) list)
+    ((? hash-table? hash) (hash-table->alist hash))
+    (#f (list))))
 
 (define (capabilities->parameters capabilities)
-  (alist->hash-table
-    `(("capabilities" .
-      ,(alist->hash-table
-        `(("firstMatch" . (,(make-hash-table)))
-          ("alwaysMatch" . ,(to-hash-table capabilities))))))))
+  `(("capabilities" .
+     (("firstMatch" . #(()))
+      ("alwaysMatch" . ,(to-assoc-list capabilities))))))
 
 (define (open* driver-uri finalizer capabilities)
 ; wait until the new process starts listening
@@ -72,7 +73,7 @@
       (let* ((uri (format #f "~a/session" driver-uri))
              (parameters (capabilities->parameters capabilities))
              (response (request 'POST uri parameters))
-             (session-id (hash-ref response "sessionId")))
+             (session-id (assoc-ref response "sessionId")))
         (list 'web-driver driver-uri session-id finalizer)))
     (lambda (key . args)
       (finalizer)
@@ -101,12 +102,12 @@
 (set! *random-state* (random-state-from-platform))
 
 (define (add-firefox-headless capabilities)
-  (define hash-table (to-hash-table capabilities))
-  (define firefox-options (hash-ref hash-table "moz:firefoxOptions" (make-hash-table)))
-  (define args (hash-ref firefox-options "args" '()))
-  (hash-set! firefox-options "args" (append args '("-headless")))
-  (hash-set! hash-table "moz:firefoxOptions" firefox-options)
-  hash-table)
+  (define capabilities' (or capabilities '()))
+  (define firefox-options (or (assoc-ref "moz:firefoxOptions" capabilities') '()))
+  (define args (or (assoc-ref "args" firefox-options) #()))
+  (define args' (list->vector (append (vector->list args) (list "-headless"))))
+  (define firefox-options' (assoc-set! firefox-options "args" args'))
+  (assoc-set! capabilities' "moz:firefoxOptions" firefox-options'))
 
 (define *default-driver* (make-thread-local-fluid))
 
@@ -146,7 +147,7 @@
         (lambda () (request 'GET (format #f "~a/status" driver-uri) #f) #t)
         (lambda (key . args) #f)))))
 
-(define (session-command driver method path body-scm)
+(define* (session-command driver method path #:optional (body-scm '()))
   (match driver
     (('web-driver driver-uri session-id finalizer)
       (request method (format #f "~a/session/~a~a" driver-uri session-id path) body-scm))))
@@ -154,7 +155,7 @@
 (define (close driver)
   (match driver
     (('web-driver driver-uri session-id finalizer)
-      (session-command driver 'DELETE "" #f)
+      (session-command driver 'DELETE "")
       (finalizer))))
 
 (define-public (close-web-driver . args)
@@ -189,45 +190,46 @@
 ;;; Timeouts
 
 (define-public-with-driver (set-script-timeout driver #:optional timeout)
-  (let ((value (match timeout ((? number? n) n) (#f 30000) (#:never #nil))))
-    (session-command driver 'POST "/timeouts" (json (object ("script" ,value))))))
+  (let ((value (match timeout ((? number? n) n) (#f 30000) (#:never 'null))))
+    (session-command driver 'POST "/timeouts" `(("script" . ,value)))))
 
 (define-public-with-driver (get-script-timeout driver)
-  (match (hash-ref (session-command driver 'GET "/timeouts" #f) "script")
+  (match (assoc-ref (session-command driver 'GET "/timeouts" #f) "script")
     ((? number? n) n)
-    (#nil #:never)))
+    (#nil #:never)
+    ('null #:never)))
 
 (define-public-with-driver (set-page-load-timeout driver #:optional (timeout 300000))
-  (session-command driver 'POST "/timeouts" (json (object ("pageLoad" ,timeout)))))
+  (session-command driver 'POST "/timeouts" `(("pageLoad" . ,timeout))))
 
 (define-public-with-driver (get-page-load-timeout driver)
-  (hash-ref (session-command driver 'GET "/timeouts" #f) "pageLoad"))
+  (assoc-ref (session-command driver 'GET "/timeouts" #f) "pageLoad"))
 
 (define-public-with-driver (set-implicit-timeout driver #:optional (timeout 0))
-  (session-command driver 'POST "/timeouts" (json (object ("implicit" ,timeout)))))
+  (session-command driver 'POST "/timeouts" `(("implicit" . ,timeout))))
 
 (define-public-with-driver (get-implicit-timeout driver)
-  (hash-ref (session-command driver 'GET "/timeouts" #f) "implicit"))
+  (assoc-ref (session-command driver 'GET "/timeouts" #f) "implicit"))
 
 ;;; Navigation
 
 (define-public-with-driver (navigate-to driver url)
-  (session-command driver 'POST "/url" (json (object ("url" ,url)))))
+  (session-command driver 'POST "/url" `(("url" . ,url))))
 
 (define-public-with-driver (current-url driver) 
-  (session-command driver 'GET "/url" #f))
+  (session-command driver 'GET "/url"))
 
 (define-public-with-driver (back driver) 
-  (session-command driver 'POST "/back" (json (object))))
+  (session-command driver 'POST "/back"))
 
 (define-public-with-driver (forward driver)
-  (session-command driver 'POST "/forward" (json (object))))
+  (session-command driver 'POST "/forward"))
 
 (define-public-with-driver (refresh driver)
-  (session-command driver 'POST "/refresh" (json (object))))
+  (session-command driver 'POST "/refresh"))
 
 (define-public-with-driver (title driver)
-  (session-command driver 'GET "/title" #f))
+  (session-command driver 'GET "/title"))
 
 ;;; Windows
 
@@ -236,10 +238,10 @@
 
 (define-public-with-driver (current-window driver)
   (web-driver-window driver
-    (session-command driver 'GET "/window" #f)))
+    (session-command driver 'GET "/window")))
 
 (define-public-with-driver (close-window driver)
-  (session-command driver 'DELETE "/window" (json (object)))
+  (session-command driver 'DELETE "/window" '())
   ; XXX chromedriver would keep the deleted window currect, 
   ; causing all following navigation calls to fail.
   (switch-to (first (all-windows driver))))
@@ -247,13 +249,13 @@
 (define-public-with-driver (all-windows driver)
   (map
     (lambda (window-object) (web-driver-window driver window-object))
-    (session-command driver 'GET "/window/handles" #f)))
+    (vector->list (session-command driver 'GET "/window/handles"))))
 
 (define (new-window driver type)
   (web-driver-window 
     driver
-    (hash-ref
-      (session-command driver 'POST "/window/new" (json (object ("type" ,type))))
+    (assoc-ref
+      (session-command driver 'POST "/window/new" `(("type" . ,type)))
       "handle")))
 
 (define-public-with-driver (open-new-window driver)
@@ -265,20 +267,20 @@
 (define-public-with-driver (switch-to driver target)
   (match target
     (('web-driver-window driver handle)
-     (session-command driver 'POST "/window" (json (object ("handle" ,handle)))))
+     (session-command driver 'POST "/window" `(("handle" . ,handle))))
     (('web-driver-element driver element)
      (session-command driver 'POST "/frame" 
-       (json (object ("id" (object ("element-6066-11e4-a52e-4f735466cecf" ,element)))))))
+       `(("id" . (("element-6066-11e4-a52e-4f735466cecf" . ,element))))))
     ((? number? n)
-     (session-command driver 'POST "/frame" (json (object ("id" ,n)))))))
+     (session-command driver 'POST "/frame" `(("id" . ,n))))))
 
 ;;; Browsing Context
 
 (define-public-with-driver (switch-to-parent driver)
-  (session-command driver 'POST "/frame/parent" (json (object))))
+  (session-command driver 'POST "/frame/parent"))
 
 (define-public-with-driver (switch-to-window driver)
-  (session-command driver 'POST "/frame" (json (object ("id" #nil)))))
+  (session-command driver 'POST "/frame" '(("id" . null))))
 
 ;;; Rectangle Record
 
@@ -295,41 +297,41 @@
 ;;; Resizing and Positioning Windows
 
 (define (result->rect result)
-  (let* ((x (hash-ref result "x"))
-         (y (hash-ref result "y"))
-         (width (hash-ref result "width"))
-         (height (hash-ref result "height")))
+  (let* ((x (assoc-ref result "x"))
+         (y (assoc-ref result "y"))
+         (width (assoc-ref result "width"))
+         (height (assoc-ref result "height")))
     (make-rect x y width height)))
 
 (define-public-with-driver (window-rect driver)
-  (result->rect (session-command driver 'GET "/window/rect" #f)))
+  (result->rect (session-command driver 'GET "/window/rect")))
 
 (define-public-with-driver (set-window-position driver x y)
-  (set-window-rect driver x y #nil #nil))
+  (set-window-rect driver x y 'null 'null))
 
 (define-public-with-driver (set-window-size driver width height)
-  (set-window-rect driver #nil #nil width height))
+  (set-window-rect driver 'null 'null width height))
 
 (define-public-with-driver (set-window-rect driver #:rest args)
   (match args
     ((x y width height)
      (result->rect 
        (session-command driver 'POST "/window/rect" 
-         (json (object ("x" ,x) ("y" ,y) ("width" ,width) ("height" ,height))))))
+         `(("x" . ,x) ("y" . ,y) ("width" . ,width) ("height" . ,height)))))
     ((($ <rect> x y width height))
      (set-window-rect driver x y width height))))
 
 (define-public-with-driver (minimize driver)
-  (session-command driver 'POST "/window/minimize" (json (object))))
+  (session-command driver 'POST "/window/minimize"))
 
 (define-public-with-driver (maximize driver)
-  (session-command driver 'POST "/window/maximize" (json (object))))
+  (session-command driver 'POST "/window/maximize"))
 
 (define-public-with-driver (full-screen driver)
-  (session-command driver 'POST "/window/fullscreen" (json (object))))
+  (session-command driver 'POST "/window/fullscreen"))
 
 (define-public-with-driver (restore driver)
-  (set-window-rect driver #nil #nil #nil #nil))
+  (set-window-rect driver 'null 'null 'null 'null))
 
 ;;; Elements
 
@@ -338,7 +340,7 @@
 (define (web-driver-element driver element-object)
   (list 
     'web-driver-element driver 
-    (hash-ref element-object "element-6066-11e4-a52e-4f735466cecf")))
+    (assoc-ref element-object "element-6066-11e4-a52e-4f735466cecf")))
 
 (define (element? value)
   (match value
@@ -347,8 +349,8 @@
 
 (define (element-object? element-object)
   (and
-    (hash-table? element-object)
-    (hash-ref element-object "element-6066-11e4-a52e-4f735466cecf")))
+    (list? element-object)
+    (assoc-ref element-object "element-6066-11e4-a52e-4f735466cecf")))
 
 (define (element-command element method path body-scm)
   (match element
@@ -361,27 +363,29 @@
   (web-driver-element driver
     (session-command driver 
       'POST "/element" 
-      (json (object ("using" ,using) ("value" ,value))))))
+      `(("using" . ,using) ("value" . ,value)))))
 
 (define (find-element-from driver from using value)
   (web-driver-element driver
     (element-command from
       'POST "/element"
-      (json (object ("using" ,using) ("value" ,value))))))
+      `(("using" . ,using) ("value" . ,value)))))
 
 (define (find-elements driver using value)
   (map
     (lambda (element-object) (web-driver-element driver element-object))
-    (session-command driver 
-      'POST "/elements" 
-      (json (object ("using" ,using) ("value" ,value))))))
+    (vector->list
+      (session-command driver
+        'POST "/elements"
+        `(("using" . ,using) ("value" . ,value))))))
 
 (define (find-elements-from driver from using value)
   (map
     (lambda (element-object) (web-driver-element driver element-object))
-    (element-command from 
-      'POST "/elements" 
-      (json (object ("using" ,using) ("value" ,value))))))
+    (vector->list
+      (element-command from
+        'POST "/elements"
+        `(("using" . ,using) ("value" . ,value))))))
 
 (define-syntax define-finder
   (syntax-rules ()
@@ -438,18 +442,23 @@
     #:from from))
 
 (define-public-with-driver (active-element driver)
-  (web-driver-element driver (session-command driver 'GET "/element/active" #f)))
+  (web-driver-element driver (session-command driver 'GET "/element/active")))
 
 ;;; Element State
 
 (define-public (selected? element)
   (element-command element 'GET "/selected" #f))
 
+(define (fold-null json)
+  (match json
+    ('null #f)
+    (x x)))
+
 (define-public (attribute element name)
-  (element-command element 'GET (format #f "/attribute/~a" name) #f))
+  (fold-null (element-command element 'GET (format #f "/attribute/~a" name) #f)))
 
 (define-public (property element name)
-  (element-command element 'GET (format #f "/property/~a" name) #f))
+  (fold-null (element-command element 'GET (format #f "/property/~a" name) #f)))
 
 (define-public (css-value element name)
   (element-command element 'GET (format #f "/css/~a" name) #f))
@@ -479,13 +488,13 @@
     text text text text text))
 
 (define-public-with-driver (click driver target)
-  (define (execute-click element) (element-command element 'POST "/click" (json (object))))
+  (define (execute-click element) (element-command element 'POST "/click" '()))
   (cond
     ((element? target) (execute-click target))
     ((string? target) (execute-click (element-by-xpath driver (click-xpath target))))))
 
 (define-public (clear element)
-  (element-command element 'POST "/clear" (json (object))))
+  (element-command element 'POST "/clear" '()))
 
 (define-public-with-driver (send-keys driver target text)
   (element-command
@@ -493,7 +502,7 @@
       ((element? target) target)
       ((string? target) (element-by-label-text driver target))
       (else (throw 'illegal-argument "target of send-keys must be either element or string: ~a" target)))
-    'POST "/value" (json (object ("text" ,text)))))
+    'POST "/value" `(("text" . ,text))))
 
 (define-public-with-driver (choose-file driver target path)
   (send-keys driver target (canonicalize-path path)))
@@ -501,41 +510,37 @@
 ;;; Document
 
 (define-public-with-driver (page-source driver)
-  (session-command driver 'GET "/source" #f))
+  (session-command driver 'GET "/source"))
 
 (define (scm->javascript value)
   (match value
     (#t #t)
     (#f #f)
-    (#nil #nil)
+    (#nil 'null)
     ((? number? n) n)
     ((? string? s) s)
     (('web-driver-element driver handle)
-     (json (object ("element-6066-11e4-a52e-4f735466cecf" ,handle))))
-    ((? list? l) (map scm->javascript l))))
+     `(("element-6066-11e4-a52e-4f735466cecf" . ,handle)))
+    ((? list? l) (list->vector (map scm->javascript l)))))
 
 (define (javascript->scm driver value)
   (match value
     (#t #t)
     (#f #f)
     (#nil #nil)
+    ('null #nil)
     ((? number? n) n)
     ((? string? s) s)
     ((? element-object? r) (web-driver-element driver r))
-    ((? list? l) (map (lambda (value) (javascript->scm driver value)) l))
-    ((? hash-table? t)
-     (alist->hash-table
-       (hash-map->list
-         (lambda (key value)
-           (cons key (javascript->scm driver value)))
-         t)))))
+    ((? vector? v) (map (lambda (value) (javascript->scm driver value)) (vector->list v)))
+    ((? list? l) (alist->hash-table (map (lambda (key . value) (cons key (javascript->scm driver value))) l)))))
 
 (define (execute driver path body arguments)
   (let ((js-args (map scm->javascript arguments)))
     (javascript->scm driver
       (session-command 
         driver 'POST path
-        (json (object ("script" ,body) ("args" ,js-args)))))))
+        `(("script" . ,body) ("args" . ,(list->vector js-args)))))))
 
 (define-public-with-driver (execute-javascript driver body #:rest arguments)
   (execute driver "/execute/sync" body arguments))
@@ -563,22 +568,22 @@
 
 (define (parse-cookie hash)
   (make-cookie 
-    (hash-ref hash "name") 
-    (hash-ref hash "value") 
-    (hash-ref hash "path" "/")
-    (hash-ref hash "domain")
-    (hash-ref hash "secure" #f)
-    (hash-ref hash "httpOnly" #f)
-    (hash-ref hash "expiry" #f)
-    (hash-ref hash "samesite" #f)))
+    (assoc-ref hash "name")
+    (assoc-ref hash "value")
+    (or (assoc-ref hash "path") "/")
+    (assoc-ref hash "domain")
+    (assoc-ref hash "secure")
+    (assoc-ref hash "httpOnly")
+    (assoc-ref hash "expiry")
+    (assoc-ref hash "samesite")))
 
 (define-public-with-driver (get-all-cookies driver)
   (map
     parse-cookie
-    (session-command driver 'GET "/cookie" #f)))
+    (vector->list (session-command driver 'GET "/cookie"))))
 
 (define-public-with-driver (get-named-cookie driver name)
-  (parse-cookie (session-command driver 'GET (format #f "/cookie/~a" name) #f)))
+  (parse-cookie (session-command driver 'GET (format #f "/cookie/~a" name))))
 
 (define-public-with-driver 
   (add-cookie driver #:key name value path domain secure http-only expiry same-site)
@@ -588,14 +593,14 @@
              (add "name" name) (add "value" value) (add "path" path) (add "domain" domain) 
              (add "secure" secure) (add "httpOnly" http-only) (add "expiry" expiry) 
              (add "samesite" same-site)))
-         (hash (alist->hash-table (list (cons "cookie" (alist->hash-table args))))))
-    (session-command driver 'POST "/cookie" hash)))
+         (cookie `(("cookie" . ,args))))
+    (session-command driver 'POST "/cookie" cookie)))
 
 (define-public-with-driver (delete-named-cookie driver name)
-  (session-command driver 'DELETE (format #f "/cookie/~a" name) #f))
+  (session-command driver 'DELETE (format #f "/cookie/~a" name)))
 
 (define-public-with-driver (delete-all-cookies driver)
-  (session-command driver 'DELETE "/cookie" #f))
+  (session-command driver 'DELETE "/cookie"))
 
 ;;; Actions
 
@@ -623,26 +628,21 @@
 
 (define-public (release-all) (list 'release-all))
 
-(define pause-action (json (object ("type" "pause"))))
+(define pause-action `(("type" . "pause")))
 
 (define-public-with-driver (perform driver #:rest actions)
   (define (send-actions key-actions mouse-actions)
     (session-command
       driver 'POST "/actions"
-      (json
-        (object
-          ("actions"
-            (array
-              (object 
-                ("type" "key") 
-                ("id" "keyboard0") 
-                ("actions" ,key-actions))
-              (object
-                ("type" "pointer")
-                ("id" "mouse0")
-                ("actions" ,mouse-actions))))))))
+      `(("actions" .
+         #((("type" . "key")
+            ("id" . "keyboard0")
+            ("actions" . ,(list->vector key-actions)))
+           (("type" . "pointer")
+            ("id" . "mouse0")
+            ("actions" . ,(list->vector mouse-actions))))))))
   (define (release-actions)
-    (session-command driver 'DELETE "/actions" (json (object))))
+    (session-command driver 'DELETE "/actions"))
   (define (perform-actions key-actions mouse-actions actions)
     (define (key-action action)
       (perform-actions 
@@ -655,21 +655,19 @@
       (send-actions (reverse key-actions) (reverse mouse-actions))
       (match (car actions)
         (('key-down unicode-char) 
-         (key-action (json (object ("type" "keyDown") ("value" ,unicode-char)))))
+         (key-action `(("type" . "keyDown") ("value" . ,unicode-char))))
         (('key-up unicode-char) 
-         (key-action (json (object ("type" "keyUp") ("value" ,unicode-char)))))
+         (key-action `(("type" . "keyUp") ("value" . ,unicode-char))))
         (('mouse-down button)
-         (mouse-action (json (object ("type" "pointerDown") ("button" ,button)))))
+         (mouse-action `(("type" . "pointerDown") ("button" . ,button))))
         (('mouse-up button)
-         (mouse-action (json (object ("type" "pointerUp") ("button" ,button)))))
+         (mouse-action `(("type" . "pointerUp") ("button" . ,button))))
         (('mouse-move x y duration)
-         (mouse-action 
-           (json 
-             (object 
-               ("type" "pointerMove") ("x" ,x) ("y" ,y) ("origin" "viewport") 
-               ("duration" ,(or duration 0))))))
+         (mouse-action
+           `(("type" . "pointerMove") ("x" . ,x) ("y" . ,y) ("origin" . "viewport")
+             ("duration" . ,(or duration 0)))))
         (('wait duration)
-         (key-action (json (object ("type" "pause") ("duration" ,duration)))))
+         (key-action `(("type" . "pause") ("duration" . ,duration))))
         (('release-all)
          (perform-actions key-actions mouse-actions '())
          (release-actions)
