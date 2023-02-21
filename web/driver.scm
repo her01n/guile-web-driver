@@ -27,7 +27,8 @@
             (list #:socket server-socket)))))))
 
 (define (request method uri body-scm)
-  (define body-bytevector (and body-scm (string->bytevector (scm->json-string body-scm) "utf-8")))
+  (define body-string (scm->json-string body-scm))
+  (define body-bytevector (and body-scm (string->bytevector body-string "utf-8")))
   (call-with-values
     (lambda ()
       (http-request uri #:method method #:body body-bytevector))
@@ -38,8 +39,9 @@
           (let ((error (assoc-ref value "error"))
                 (message (assoc-ref value "message")))
             (throw 'web-driver-error
-              (format #f "Request ~a ~a failed with status ~a ~a.\nError: ~a\nMessage: ~a\n" 
-                method uri (response-code response) (response-reason-phrase response) error message))))))))
+              (format #f "~a ~a.\nRequest: ~a ~a\nBody: ~a\nError: ~a\nMessage: ~a\n"
+                (response-code response) (response-reason-phrase response)
+                method uri body-string error message))))))))
 
 (define (close-driver-pipe pipe)
   (kill (hashq-ref port/pid-table pipe) SIGTERM)
