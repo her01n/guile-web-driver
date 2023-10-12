@@ -1,5 +1,5 @@
 Authors of Guile-Web-Driver
 
 * Michal Herko <michal.herko@disroot.org>
-
-  
+* Artyom V. Poptsov <poptsov.artyom@gmail.com>
+  Migration to GNU Autotools from hand-written scripts.
