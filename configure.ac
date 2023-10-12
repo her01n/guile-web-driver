@@ -20,7 +20,7 @@ You should have received a copy of the GNU General Public License
 along with Guile-Web-Driver.  If not, see <http://www.gnu.org/licenses/>.
 ]])
 
-AC_INIT([Guile-Web-Driver], [0.1.0], [michal.herko@disroot.org],
+AC_INIT([Guile-Web-Driver], [0.1], [michal.herko@disroot.org],
                      [guile-web-driver],
                      [https://github.com/her01n/guile-web-driver])
 
