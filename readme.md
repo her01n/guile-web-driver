@@ -18,6 +18,18 @@ The client implements most of the webdriver [specification](https://www.w3.org/T
   Required for unit tests.
 - Optionally for unit testing, hdt library is required from https://github.com/her01n/hdt
 
+### Installation
+
+The manual installation process looks like follows:
+```
+git clone https://github.com/her01n/guile-web-driver.git
+cd guile-web-driver
+autoreconf -vif
+./configure --prefix=/usr
+make -j$(nproc)
+sudo make install
+```
+
 ### Usage
 
 ```guile
